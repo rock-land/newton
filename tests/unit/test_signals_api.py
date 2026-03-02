@@ -18,6 +18,27 @@ def test_signals_endpoint_returns_contract_fields() -> None:
     assert isinstance(payload["metadata"], dict)
 
 
+def test_signal_endpoint_includes_scaffold_flag() -> None:
+    payload = signals_api.get_current_signal("EUR_USD")
+    assert payload["scaffold"] is True
+
+
+def test_signal_endpoint_includes_warning() -> None:
+    payload = signals_api.get_current_signal("EUR_USD")
+    assert "warning" in payload
+    assert "scaffold" in payload["warning"].lower()
+
+
+def test_signal_endpoint_metadata_has_scaffold_mode() -> None:
+    payload = signals_api.get_current_signal("EUR_USD")
+    assert payload["metadata"]["mode"] == "scaffold"
+
+
+def test_generators_endpoint_includes_scaffold_flag() -> None:
+    payload = signals_api.list_signal_generators()
+    assert payload["scaffold"] is True
+
+
 def test_stage1_endpoints_unchanged_paths_still_registered() -> None:
     paths = app.openapi()["paths"]
 

@@ -69,7 +69,7 @@ The following work was completed before governance was established. This is not 
 | ID | Task | Scope | Acceptance | Status |
 |---|---|---|---|---|
 | T-101 | Wire pytest-cov into test suite and establish baseline coverage | server | `pytest --cov=src -q` runs by default; coverage report shows >=80% global; pytest.ini updated with `addopts = --cov=src --cov-report=term-missing`; CLAUDE.md quality gate reflects coverage command | DONE |
-| T-102 | Mark signal endpoint as scaffold-only with clear response metadata | server | `GET /api/v1/signals/{instrument}` response includes `"scaffold": true` field and a warning in the response metadata; hardcoded dummy FeatureSnapshot replaced with explicit scaffold marker; tests updated to verify scaffold flag | TODO |
+| T-102 | Mark signal endpoint as scaffold-only with clear response metadata | server | `GET /api/v1/signals/{instrument}` response includes `"scaffold": true` field and a warning in the response metadata; hardcoded dummy FeatureSnapshot replaced with explicit scaffold marker; tests updated to verify scaffold flag | DONE |
 | T-103 | Remove stale client entry point and record Dockerfile deferral | fullstack | `client/src/main.js` deleted; DEC-012 recorded in DECISIONS.md deferring Dockerfile implementation to Stage 7; Dockerfile unchanged (stub retained) | TODO |
 | T-1G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with >=80% coverage; all T-1xx tasks DONE | TODO |
 

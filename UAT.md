@@ -23,3 +23,6 @@ Format: checkbox | test description | notes
 |------|------|-------|
 | [ ] | Run `pytest -q` — coverage report appears automatically showing per-module coverage and >=80% global | |
 | [ ] | Run `pytest --cov=src --cov-report=term-missing -q` — same result as bare `pytest -q` (addopts wired) | |
+| [ ] | `GET /api/v1/signals/EUR_USD` response includes `"scaffold": true` at top level | |
+| [ ] | `GET /api/v1/signals/EUR_USD` response includes `"warning"` string mentioning scaffold | |
+| [ ] | `GET /api/v1/signals/generators` response includes `"scaffold": true` at top level | |
