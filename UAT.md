@@ -30,3 +30,6 @@ Format: checkbox | test description | notes
 | [ ] | `client/src/main.tsx` still exists (scaffold entry point retained) | |
 | [ ] | `DECISIONS.md` contains DEC-012 deferring Dockerfile to Stage 7 | |
 | [ ] | `Dockerfile` still contains stub placeholder (unchanged) | |
+| [ ] | Oanda fetcher URL validation accepts configured `base_url` (e.g., live `api-fxtrade.oanda.com`) without ValueError | |
+| [ ] | Binance fetcher URL validation accepts configured `base_url` (e.g., testnet `testnet.binance.vision`) without ValueError | |
+| [ ] | Health check database failures are logged (not silently swallowed) — check logs when DB is unavailable | |

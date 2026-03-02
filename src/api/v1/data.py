@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 import os
@@ -17,6 +18,8 @@ from src.api.schemas import (
     calculate_payload_checksum,
     utc_now,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["data"])
 
@@ -46,6 +49,7 @@ class HealthService:
                     cur.execute("SELECT 1")
                     return cur.fetchone() == (1,)
         except Exception:
+            logger.exception("Database health check failed")
             return False
 
     def _query_last_candle_ages(self, instrument_ids: list[str], interval: str) -> dict[str, int | None]:
@@ -79,6 +83,7 @@ class HealthService:
                         else:
                             ages[instrument_id] = max(0, int((now - latest).total_seconds()))
         except Exception:
+            logger.exception("Candle age query failed")
             return {instrument_id: None for instrument_id in instrument_ids}
 
         return ages
