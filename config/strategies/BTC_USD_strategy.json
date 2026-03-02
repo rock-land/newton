@@ -1,0 +1,38 @@
+{
+  "instrument": "BTC_USD",
+  "events": [
+    "BTCUSD_UP_3PCT_24H",
+    "BTCUSD_DOWN_3PCT_24H"
+  ],
+  "token_config": "config/classifications/BTC_USD_classifications.json",
+  "token_selection": {
+    "method": "mutual_information",
+    "top_n": 20,
+    "jaccard_threshold": 0.85
+  },
+  "bayesian": {
+    "calibration": "isotonic",
+    "posterior_cap": 0.9,
+    "laplace_alpha": 1
+  },
+  "ml_model": {
+    "type": "xgboost",
+    "lookback_periods": 24,
+    "hyperparams": "auto"
+  },
+  "meta_learner": {
+    "type": "logistic_regression",
+    "min_samples": 100
+  },
+  "thresholds": {
+    "strong_buy": 0.6,
+    "buy": 0.5,
+    "sell": 0.45
+  },
+  "risk_overrides": {
+    "hard_stop_pct": 0.03
+  },
+  "performance_overrides": {
+    "max_drawdown_pct": 0.25
+  }
+}

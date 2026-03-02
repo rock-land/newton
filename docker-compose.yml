@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: newton-timescaledb
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-newton}
+      POSTGRES_USER: ${POSTGRES_USER:-newton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-newton_dev_password}
+    volumes:
+      - newton_timescaledb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-newton} -d ${POSTGRES_DB:-newton}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  newton_timescaledb_data:

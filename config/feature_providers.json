@@ -1,0 +1,45 @@
+{
+  "providers": [
+    {
+      "name": "technical",
+      "class": "newton.data.indicators.TechnicalIndicatorProvider",
+      "namespace": "technical",
+      "enabled": true,
+      "config": {
+        "indicators": [
+          {
+            "key": "rsi",
+            "params": {
+              "period": 14
+            }
+          },
+          {
+            "key": "macd",
+            "params": {
+              "fast": 12,
+              "slow": 26,
+              "signal": 9
+            }
+          },
+          {
+            "key": "bb",
+            "params": {
+              "period": 20,
+              "std": 2.0
+            }
+          },
+          {
+            "key": "obv",
+            "params": {}
+          },
+          {
+            "key": "atr",
+            "params": {
+              "period": 14
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

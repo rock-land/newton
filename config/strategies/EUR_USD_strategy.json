@@ -1,0 +1,34 @@
+{
+  "instrument": "EUR_USD",
+  "events": [
+    "EURUSD_UP_1PCT_24H",
+    "EURUSD_DOWN_1PCT_24H"
+  ],
+  "token_config": "config/classifications/EUR_USD_classifications.json",
+  "token_selection": {
+    "method": "mutual_information",
+    "top_n": 20,
+    "jaccard_threshold": 0.85
+  },
+  "bayesian": {
+    "calibration": "isotonic",
+    "posterior_cap": 0.9,
+    "laplace_alpha": 1
+  },
+  "ml_model": {
+    "type": "xgboost",
+    "lookback_periods": 24,
+    "hyperparams": "auto"
+  },
+  "meta_learner": {
+    "type": "logistic_regression",
+    "min_samples": 100
+  },
+  "thresholds": {
+    "strong_buy": 0.65,
+    "buy": 0.55,
+    "sell": 0.4
+  },
+  "risk_overrides": {},
+  "performance_overrides": {}
+}

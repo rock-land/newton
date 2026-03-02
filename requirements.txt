@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pytest
+pytest-cov
+ruff
+mypy
+openapi-spec-validator
+psycopg[binary]
+ta-lib

@@ -1,0 +1,13 @@
+{
+  "instruments": [
+    "EUR_USD",
+    "BTC_USD"
+  ],
+  "signal_interval": "1h",
+  "db_url": "ENV:DATABASE_URL",
+  "telegram_bot_token": "ENV:TELEGRAM_BOT_TOKEN",
+  "telegram_chat_id": "ENV:TELEGRAM_CHAT_ID",
+  "api_version": "v1",
+  "api_port": 8000,
+  "log_level": "INFO"
+}

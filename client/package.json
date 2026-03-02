@@ -1,0 +1,10 @@
+{
+  "name": "newton-client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "start": "python3 -m http.server 4173 -d public",
+    "test": "echo \"no client tests yet\""
+  }
+}

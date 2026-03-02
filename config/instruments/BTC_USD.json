@@ -1,0 +1,30 @@
+{
+  "instrument_id": "BTC_USD",
+  "broker": "binance",
+  "display_name": "BTC/USDT",
+  "asset_class": "crypto",
+  "market_type": "spot",
+  "base_currency": "BTC",
+  "quote_currency": "USDT",
+  "symbol": "BTCUSDT",
+  "pip_size": 0.01,
+  "min_trade_size": 1e-05,
+  "max_trade_size": 100,
+  "trading_hours": "24/7",
+  "intervals": [
+    "1m",
+    "5m",
+    "1h",
+    "4h",
+    "1d"
+  ],
+  "signal_interval": "1h",
+  "typical_spread_pct": 0.05,
+  "default_slippage_pct": 0.02,
+  "strategy_config": "config/strategies/BTC_USD_strategy.json",
+  "risk_overrides": {
+    "hard_stop_pct": 0.03,
+    "high_volatility_stop_pct": 0.05,
+    "max_drawdown_pct": 0.25
+  }
+}
