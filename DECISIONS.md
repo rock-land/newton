@@ -88,3 +88,10 @@ Format:
 - **Context:** SPEC.md §5.2 mandates swappable signal generators with per-instrument routing. Fallback chain ensures the system always produces a signal, even on generator failure.
 - **Consequences:** `GeneratorRegistry` is mutable at boot, frozen at runtime. `SignalRouter` attempts primary generator, falls back to secondary on `RecoverableSignalError`, emits `neutral_fail_safe_signal` if all fail. Fallback events are logged.
 - **Status:** Accepted
+
+## DEC-012
+- **Date:** 2026-03-02
+- **Decision:** Defer Dockerfile implementation to Stage 7 (Paper Trading).
+- **Context:** The Dockerfile is currently a stub placeholder (`# Scaffold Dockerfile placeholder`). Containerized deployment is not needed until paper trading (Stage 7) or production deployment (Stage 8). Building a Dockerfile now would require premature decisions about runtime dependencies, environment variables, and service orchestration that will change as the system matures through Stages 2–6.
+- **Consequences:** Dockerfile stub retained per DEC-009 (scaffold pattern). No Docker-based deployment until Stage 7. Development uses local Python environment and `docker compose` for TimescaleDB only.
+- **Status:** Accepted

@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-02 19:55 | Stage 1 / T-103 | /ship T-103 | Shipped client cleanup and Dockerfile deferral — v0.1.3 |
+| 2026-03-02 19:50 | Stage 1 / T-103 | /task T-103 | Remove stale client entry point and record Dockerfile deferral |
 | 2026-03-02 19:40 | Stage 1 / T-102 | /ship T-102 | Shipped scaffold-only signal endpoint — v0.1.2 |
 | 2026-03-02 19:35 | Stage 1 / T-102 | /task T-102 | Mark signal endpoint as scaffold-only with response metadata |
 | 2026-03-02 19:25 | Stage 1 / T-101 | /ship T-101 | Shipped Wire pytest-cov — v0.1.1 |

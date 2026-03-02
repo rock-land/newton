@@ -26,3 +26,7 @@ Format: checkbox | test description | notes
 | [ ] | `GET /api/v1/signals/EUR_USD` response includes `"scaffold": true` at top level | |
 | [ ] | `GET /api/v1/signals/EUR_USD` response includes `"warning"` string mentioning scaffold | |
 | [ ] | `GET /api/v1/signals/generators` response includes `"scaffold": true` at top level | |
+| [ ] | `client/src/main.js` does not exist (stale entry point removed) | |
+| [ ] | `client/src/main.tsx` still exists (scaffold entry point retained) | |
+| [ ] | `DECISIONS.md` contains DEC-012 deferring Dockerfile to Stage 7 | |
+| [ ] | `Dockerfile` still contains stub placeholder (unchanged) | |
