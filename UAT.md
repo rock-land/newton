@@ -1,4 +1,4 @@
-# {PROJECT_NAME} User Acceptance Tests
+# Newton User Acceptance Tests
 
 This file tracks user acceptance tests cumulatively across all stages. Tests are added as tasks are completed and reviewed at each stage gate.
 
@@ -19,7 +19,7 @@ Format: checkbox | test description | notes
 
 <!-- Example format (populated during stage work):
 
-## Stage 1: [Stage Name]
+## Stage 1: Remediation & Hardening
 
 | Pass | Test | Notes |
 |------|------|-------|
