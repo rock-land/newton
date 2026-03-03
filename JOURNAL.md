@@ -5,6 +5,10 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-03 08:15 | Stage 1 / T-1G | /ship T-1G | Shipped Stage 1 gate — v0.1.5, merged to main |
+| 2026-03-03 08:10 | Stage 1 / T-1G | /task T-1G | Stage gate validation — all criteria pass, quality gate PASS (55 tests, 85% coverage) |
+| 2026-03-03 08:05 | Stage 1 / FIX tasks | /verify-fixes | Verified 1 fix task (T-103-FIX1): PASS — both critical findings resolved |
+| 2026-03-03 08:00 | Stage 1 / — | /project-status | Displayed project status dashboard |
 | 2026-03-02 21:00 | Stage 1 / T-103-FIX1 | /ship T-103-FIX1 | Shipped URL validation fix and health check logging — v0.1.4 |
 | 2026-03-02 20:45 | Stage 1 / T-103-FIX1 | /task T-103-FIX1 | Fix hardcoded URL validation in fetchers and add exception logging to health checks |
 | 2026-03-02 20:35 | Stage 1 / — | /stage-report | Compiled stage report: NOT READY — 1 FIX task added (T-103-FIX1) |

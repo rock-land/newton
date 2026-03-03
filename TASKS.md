@@ -72,7 +72,7 @@ The following work was completed before governance was established. This is not 
 | T-102 | Mark signal endpoint as scaffold-only with clear response metadata | server | `GET /api/v1/signals/{instrument}` response includes `"scaffold": true` field and a warning in the response metadata; hardcoded dummy FeatureSnapshot replaced with explicit scaffold marker; tests updated to verify scaffold flag | DONE |
 | T-103 | Remove stale client entry point and record Dockerfile deferral | fullstack | `client/src/main.js` deleted; DEC-012 recorded in DECISIONS.md deferring Dockerfile implementation to Stage 7; Dockerfile unchanged (stub retained) | DONE |
 | T-103-FIX1 | Fix hardcoded URL validation in fetchers and add exception logging to health checks | server | Oanda fetcher validates against configured `self._base_url` netloc, not hardcoded practice domain; Binance fetcher applies same fix for testnet compatibility; health check `except` blocks log exceptions via `logger.exception()` before returning defaults; existing tests still pass; new tests verify URL validation accepts configured base URLs | DONE |
-| T-1G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with >=80% coverage; all T-1xx tasks DONE | TODO |
+| T-1G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with >=80% coverage; all T-1xx tasks DONE | DONE |
 
 ---
 

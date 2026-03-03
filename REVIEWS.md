@@ -211,8 +211,8 @@ _None._
 ### Stage Report
 
 - **Date:** 2026-03-02
-- **Status:** PENDING
-- **Sign-off:** —
+- **Status:** APPROVED
+- **Sign-off:** 2026-03-03
 
 #### Quality Gate Summary
 
@@ -306,3 +306,30 @@ Consolidated from both reviews:
 #### Verdict
 
 **NOT READY** — Two critical findings require remediation before the stage gate. One FIX task (T-103-FIX1) bundles both fixes. After the fix is shipped and verified, the stage gate can proceed. All high findings are deferred to their target stages with documented traceability.
+
+### Fix Verification
+
+- **Date:** 2026-03-03
+- **Status:** PASS
+
+#### Verified Fixes
+
+| Fix Task | Original Finding | Status | Notes |
+|---|---|---|---|
+| T-103-FIX1 (SR-C1) | SR-C1 — Hardcoded Oanda URL validation | **PASS** | `fetcher_oanda.py:31` now validates against `urlparse(self._base_url).netloc` instead of hardcoded `api-fxpractice.oanda.com`. Live URL `api-fxtrade.oanda.com` accepted. Test `test_oanda_url_validation_accepts_configured_base_url` confirms. Mismatched netloc still rejected (`test_oanda_url_validation_rejects_mismatched_netloc`). |
+| T-103-FIX1 (SR-C1/SR-L1) | SR-L1 — Hardcoded Binance URL validation | **PASS** | `fetcher_binance.py:37` applies identical fix. Testnet URL `testnet.binance.vision` accepted. Test `test_binance_url_validation_accepts_configured_base_url` confirms. Mismatched netloc rejected (`test_binance_url_validation_rejects_mismatched_netloc`). |
+| T-103-FIX1 (SR-C2) | SR-C2 — Silent exception swallowing in health checks | **PASS** | `data.py:52` now calls `logger.exception("Database health check failed")` before returning `False`. `data.py:86` calls `logger.exception("Candle age query failed")` before returning defaults. Test `test_health_check_database_logs_exceptions` verifies log output contains "database" or "health" when DB connection fails. |
+
+#### Quality Gate
+
+- lint: **PASS** — `ruff check .` all checks passed
+- types: **PASS** — `mypy src` no issues in 47 source files
+- tests: **PASS** — 55 passed, coverage 85% (up from 82% pre-fix)
+
+#### New Issues Found
+
+None — fixes are clean. No new linting errors, type errors, or test regressions. Coverage improved by 3% due to 5 new tests added with the fix.
+
+#### Verdict
+
+**PASS** — Both critical findings (SR-C1, SR-C2) are fully resolved. URL validation now dynamically validates against configured `base_url` in both fetchers. Health check exception logging is in place with structured `logger.exception()` calls. All 55 tests pass with 85% coverage. Stage report can be reconsidered for approval.

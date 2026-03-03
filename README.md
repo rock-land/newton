@@ -14,7 +14,7 @@ Newton is a multi-stage trading system built with:
 - **Client** (Stage 6): Web UI for monitoring and control
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 1 complete, Stage 2 queued** → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 1 complete (v0.1.5)** — Remediation & Hardening. Stage 2 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -139,9 +139,10 @@ Environment variables (see `.env.example`):
 ### Quality checks
 
 ```bash
-ruff check .
-mypy src
-pytest -q
+ruff check .                    # Linting
+mypy src                        # Type checking (strict)
+pytest -q                       # Tests (includes coverage via addopts)
+pytest --cov=src -q             # Tests with explicit coverage report
 ```
 
 ### Running tests
@@ -171,15 +172,7 @@ git checkout -b stage/{N}-{name}
 
 ### Docker production deploy
 
-```bash
-docker build -t newton-api:latest .
-docker run -d \
-  --name newton-api \
-  -p 8000:8000 \
-  -e DATABASE_URL="${DATABASE_URL}" \
-  -e OANDA_API_KEY="${OANDA_API_KEY}" \
-  newton-api:latest
-```
+> **Note:** Dockerfile is a scaffold placeholder — containerized deployment is deferred to Stage 7 (DEC-012).
 
 ## Documentation
 
