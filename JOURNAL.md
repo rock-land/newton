@@ -5,6 +5,12 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 10:15 | Stage 2 / T-206-FIX1 | /ship T-206-FIX1 | Shipped fix for close fallback and threshold inconsistencies — v0.2.7 |
+| 2026-03-04 10:00 | Stage 2 / FIX tasks | /verify-fixes | Verified 1 fix task (T-206-FIX1): PASS — all 3 findings resolved, no regressions |
+| 2026-03-04 09:30 | Stage 2 / T-206-FIX1 | /task T-206-FIX1 | Fix default close fallback, generator override thresholds, and batch thresholds — record DEC-014 |
+| 2026-03-04 09:00 | Stage 2 / — | /stage-report | Compiled stage report: NOT READY — 1 FIX task added (T-206-FIX1) |
+| 2026-03-03 14:30 | Stage 2 / — | /red-review | Red team review completed: FAIL (2 critical, 5 high) |
+| 2026-03-03 14:00 | Stage 2 / — | /review | Code review completed: Ready for merge |
 | 2026-03-03 13:30 | Stage 2 / T-206 | /ship T-206 | Shipped BayesianV1Generator integration and data-layer fixes — v0.2.6 |
 | 2026-03-03 13:00 | Stage 2 / T-206 | /task T-206 | BayesianV1Generator integration and data-layer fixes — rewrite generator, fix config, add edge case tests |
 | 2026-03-03 12:30 | Stage 2 / T-205 | /ship T-205 | Shipped Bayesian inference engine — v0.2.5 |

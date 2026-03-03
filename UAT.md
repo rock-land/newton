@@ -71,3 +71,9 @@ Format: checkbox | test description | notes
 | [ ] | `verify_candles()` with zero-volume candles passes OHLC integrity (volume is not an OHLC field) | |
 | [ ] | Indicator provider handles zero-volume candles without error (OBV stays at 0) | |
 | [ ] | Indicator provider handles zero-range candles (open==high==low==close) without error (ATR=0) | |
+| [ ] | `BayesianV1Generator.generate()` raises `RecoverableSignalError` when `_close` is missing from features and model+rules are present | |
+| [ ] | `BayesianV1Generator.generate()` without model/rules (scaffold path) does not require `_close` in features | |
+| [ ] | `SignalRouter.route_signal()` with `generator_override` uses instrument-specific thresholds (not defaults) | |
+| [ ] | `generate_batch()` with thresholds in `config.parameters` uses those thresholds for action computation | |
+| [ ] | `generate_batch()` without thresholds in `config.parameters` uses default thresholds (backward compatible) | |
+| [ ] | `DECISIONS.md` contains DEC-014 documenting event labeling high-watermark approach | |

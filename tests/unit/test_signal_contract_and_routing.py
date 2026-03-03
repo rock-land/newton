@@ -304,3 +304,95 @@ def test_registry_get_unknown_generator_raises() -> None:
     registry.freeze()
     with pytest.raises(ValueError, match="Unknown generator"):
         registry.get("nonexistent")
+
+
+# --- T-206-FIX1: SR-H2 — Generator override preserves instrument thresholds ---
+
+
+def test_generator_override_preserves_btc_thresholds() -> None:
+    """When generator_override is specified, instrument-specific thresholds must be used."""
+    router = build_default_router()
+    # BTC_USD thresholds: strong_buy=0.60, buy=0.50, sell=0.45
+    # Probability 0.53 is BUY for BTC (>0.50) but NEUTRAL for EUR (not >0.55)
+    features = FeatureSnapshot(
+        instrument="BTC_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"score": 0.53, "confidence": 0.7},
+        metadata={},
+    )
+    signal = router.route_signal(
+        instrument="BTC_USD",
+        features=features,
+        generator_override="bayesian_v1",
+    )
+    # With BTC thresholds (buy > 0.50), 0.53 should be BUY
+    assert signal.action == "BUY"
+
+
+def test_generator_override_does_not_use_default_thresholds() -> None:
+    """Override must NOT fall back to default thresholds (0.65/0.55/0.40)."""
+    router = build_default_router()
+    # Probability 0.42 is NEUTRAL for EUR (>0.40 sell threshold) but SELL for BTC (<0.45)
+    features = FeatureSnapshot(
+        instrument="BTC_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"score": 0.42, "confidence": 0.7},
+        metadata={},
+    )
+    signal = router.route_signal(
+        instrument="BTC_USD",
+        features=features,
+        generator_override="bayesian_v1",
+    )
+    # With BTC thresholds (sell < 0.45), 0.42 should be SELL
+    assert signal.action == "SELL"
+
+
+# --- T-206-FIX1: SR-H3 — generate_batch uses instrument thresholds ---
+
+
+def test_batch_signal_uses_config_thresholds() -> None:
+    """generate_batch signals should use thresholds from config when provided."""
+    gen = BayesianV1Generator()
+    # BTC_USD thresholds passed via config parameters
+    config = GeneratorConfig(
+        enabled=True,
+        parameters={
+            "thresholds": {
+                "strong_buy": 0.60,
+                "buy": 0.50,
+                "sell": 0.45,
+            },
+        },
+    )
+    # Probability 0.53 — BUY with BTC thresholds, NEUTRAL with defaults
+    features = FeatureSnapshot(
+        instrument="BTC_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"score": 0.53, "confidence": 0.7},
+        metadata={},
+    )
+    results = gen.generate_batch("BTC_USD", [features], config)
+    assert len(results) == 1
+    _, signal = results[0]
+    assert signal.action == "BUY"
+
+
+def test_batch_signal_without_thresholds_uses_defaults() -> None:
+    """Without thresholds in config, defaults apply (backward compatible)."""
+    gen = BayesianV1Generator()
+    config = GeneratorConfig(enabled=True, parameters={})
+    features = FeatureSnapshot(
+        instrument="BTC_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"score": 0.53, "confidence": 0.7},
+        metadata={},
+    )
+    results = gen.generate_batch("BTC_USD", [features], config)
+    _, signal = results[0]
+    # 0.53 is NEUTRAL with default thresholds (buy > 0.55)
+    assert signal.action == "NEUTRAL"

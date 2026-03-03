@@ -431,3 +431,57 @@ class TestIndicatorEdgeCases:
         for features in result.values():
             if "atr:period=3" in features:
                 assert features["atr:period=3"] == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# T-206-FIX1: SR-H1 — _close missing raises RecoverableSignalError
+# ---------------------------------------------------------------------------
+
+
+class TestCloseRequiredForInference:
+    """When model+rules are present, _close must be in features."""
+
+    def test_missing_close_raises_recoverable_error(self) -> None:
+        gen = BayesianV1Generator()
+        config = GeneratorConfig(
+            enabled=True,
+            parameters={"model": _make_model(), "rules": _make_rules()},
+        )
+        # Features WITHOUT _close key
+        features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime(2026, 3, 1, 12, 0, tzinfo=UTC),
+            values={
+                "rsi:period=14": 25.0,
+                "macd:fast=12,slow=26,signal=9:histogram": 0.5,
+            },
+            metadata={},
+        )
+        with pytest.raises(RecoverableSignalError, match="_close"):
+            gen.generate("EUR_USD", features, config)
+
+    def test_close_present_works_normally(self) -> None:
+        gen = BayesianV1Generator()
+        config = GeneratorConfig(
+            enabled=True,
+            parameters={"model": _make_model(), "rules": _make_rules()},
+        )
+        # Features WITH _close
+        features = _make_features(rsi=25.0, macd_hist=0.5, close=1.1000)
+        signal = gen.generate("EUR_USD", features, config)
+        assert isinstance(signal, Signal)
+
+    def test_scaffold_fallback_does_not_require_close(self) -> None:
+        """Without model+rules, _close is not required."""
+        gen = BayesianV1Generator()
+        config = GeneratorConfig(enabled=True, parameters={})
+        features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"score": 0.6},
+            metadata={},
+        )
+        signal = gen.generate("EUR_USD", features, config)
+        assert signal.probability == pytest.approx(0.6)

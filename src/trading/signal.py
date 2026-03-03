@@ -87,14 +87,20 @@ class BayesianV1Generator(_BaseGenerator):
         model: BayesianModel | None = config.parameters.get("model")
         rules: list[ClassificationRule] | None = config.parameters.get("rules")
 
+        thresholds = _extract_thresholds(config)
+
         if model is not None and rules is not None:
             # Real Bayesian inference path: FeatureSnapshot → tokenize → predict → Signal
+            if "_close" not in features.values:
+                raise RecoverableSignalError(
+                    "_close required in features for Bayesian inference"
+                )
             token_set = tokenize(
                 instrument=instrument,
                 time=features.time,
                 features=features.values,
                 rules=rules,
-                close=features.values.get("_close", 0.0),
+                close=features.values["_close"],
             )
             probability = predict(model, token_set.tokens)
             return _build_signal(
@@ -105,6 +111,7 @@ class BayesianV1Generator(_BaseGenerator):
                 component_scores={"bayesian": probability},
                 metadata={"source": "bayesian_engine", **features.metadata},
                 generated_at=features.time,
+                thresholds=thresholds,
             )
 
         # Scaffold fallback: use raw score from features
@@ -117,6 +124,7 @@ class BayesianV1Generator(_BaseGenerator):
             component_scores={"bayesian": probability},
             metadata={"source": "threshold", **features.metadata},
             generated_at=features.time,
+            thresholds=thresholds,
         )
 
     def generate_batch(
@@ -148,6 +156,7 @@ class MLV1Generator(_BaseGenerator):
             component_scores={"ml": probability},
             metadata={"source": "scaffold", **features.metadata},
             generated_at=features.time,
+            thresholds=_extract_thresholds(config),
         )
 
     def generate_batch(
@@ -185,6 +194,7 @@ class EnsembleV1Generator(_BaseGenerator):
             component_scores={"bayesian": bayesian_score, "ml": ml_score},
             metadata={"weights": weights, **features.metadata},
             generated_at=features.time,
+            thresholds=_extract_thresholds(config),
         )
 
     def generate_batch(
@@ -220,10 +230,17 @@ class SignalRouter:
         features: FeatureSnapshot,
         generator_override: str | None = None,
     ) -> Signal:
+        existing = self.routing[instrument]
         selected = (
-            InstrumentRouting(primary=generator_override, fallback=self.routing[instrument].fallback)
+            InstrumentRouting(
+                primary=generator_override,
+                fallback=existing.fallback,
+                strong_buy_threshold=existing.strong_buy_threshold,
+                buy_threshold=existing.buy_threshold,
+                sell_threshold=existing.sell_threshold,
+            )
             if generator_override
-            else self.routing[instrument]
+            else existing
         )
         primary_id = selected.primary
         fallback_id = selected.fallback
@@ -314,11 +331,25 @@ def _build_signal(
     component_scores: dict[str, float],
     metadata: dict[str, Any],
     generated_at: datetime,
+    *,
+    thresholds: dict[str, float] | None = None,
 ) -> Signal:
     clamped_probability = _clamp(probability)
+    action = _action_from_probability(
+        clamped_probability,
+        **(
+            {
+                "strong_buy_threshold": thresholds["strong_buy"],
+                "buy_threshold": thresholds["buy"],
+                "sell_threshold": thresholds["sell"],
+            }
+            if thresholds
+            else {}
+        ),
+    )
     return Signal(
         instrument=instrument,
-        action=_action_from_probability(clamped_probability),
+        action=action,
         probability=clamped_probability,
         confidence=_clamp(confidence),
         component_scores=component_scores,
@@ -326,6 +357,14 @@ def _build_signal(
         generated_at=generated_at,
         generator_id=generator_id,
     )
+
+
+def _extract_thresholds(config: GeneratorConfig) -> dict[str, float] | None:
+    """Extract action thresholds from config.parameters if present."""
+    raw = config.parameters.get("thresholds")
+    if isinstance(raw, dict) and all(k in raw for k in ("strong_buy", "buy", "sell")):
+        return {"strong_buy": float(raw["strong_buy"]), "buy": float(raw["buy"]), "sell": float(raw["sell"])}
+    return None
 
 
 def _clamp(value: float) -> float:
