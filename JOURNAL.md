@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 14:00 | Stage 3 / T-303 | /ship T-303 | Shipped walk-forward training framework — v0.3.3 |
+| 2026-03-04 13:30 | Stage 3 / T-303 | /task T-303 | Walk-forward training framework — cross-validation with embargo, fold metrics, OOF predictions |
 | 2026-03-04 13:00 | Stage 3 / T-302 | /ship T-302 | Shipped model artifact storage and versioning — v0.3.2 |
 | 2026-03-04 12:30 | Stage 3 / T-302 | /task T-302 | Model artifact storage and versioning — save/load with SHA-256 integrity |
 | 2026-03-04 12:00 | Stage 3 / T-301 | /ship T-301 | Shipped feature engineering pipeline — v0.3.1 |

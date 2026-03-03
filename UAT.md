@@ -106,3 +106,18 @@ Format: checkbox | test description | notes
 | [ ] | `get_latest_version()` returns highest version number after multiple saves | |
 | [ ] | `list_versions()` returns all version metadata sorted ascending by version | |
 | [ ] | `ModelArtifact` is frozen (attribute assignment raises `AttributeError`) | |
+
+### T-303: Walk-Forward Training Framework
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `generate_folds()` produces at least `min_folds` folds with correct train/test boundaries | |
+| [ ] | Embargo gap between train_end and test_start equals `embargo_periods` for every fold | |
+| [ ] | Each fold's train_start advances by `step_periods` (rolling window) | |
+| [ ] | Consecutive test sets are non-overlapping | |
+| [ ] | All fold indices are within `[0, n_samples)` bounds | |
+| [ ] | `generate_folds()` with insufficient data raises `ValueError` | |
+| [ ] | `validate_no_lookahead()` passes for well-formed folds and raises `ValueError` for violations | |
+| [ ] | `collect_results()` concatenates OOF predictions, labels, and timestamps from all folds | |
+| [ ] | `collect_results()` computes mean AUC-ROC as average of per-fold AUC-ROC values | |
+| [ ] | All dataclasses (`WalkForwardConfig`, `WalkForwardFold`, `FoldResult`, `WalkForwardResult`) are frozen | |
