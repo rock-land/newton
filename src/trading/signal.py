@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import logging
 from typing import Any
 
+from src.analysis.bayesian import BayesianModel, predict
 from src.analysis.signal_contract import (
     FeatureSnapshot,
     GeneratorConfig,
@@ -15,6 +16,7 @@ from src.analysis.signal_contract import (
     SignalAction,
     SignalGenerator,
 )
+from src.analysis.tokenizer import ClassificationRule, tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +69,45 @@ class _BaseGenerator:
 
 
 class BayesianV1Generator(_BaseGenerator):
+    """Bayesian signal generator (SPEC §5.5).
+
+    When ``config.parameters`` contains ``"model"`` (a ``BayesianModel``) and
+    ``"rules"`` (a list of ``ClassificationRule``), the generator uses the full
+    Bayesian inference path: tokenize features → predict posterior → Signal.
+
+    Without a model, falls back to scaffold behavior (uses ``features.values["score"]``).
+    """
+
     generator_id = "bayesian_v1"
 
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:
             raise RecoverableSignalError("generator disabled")
+
+        model: BayesianModel | None = config.parameters.get("model")
+        rules: list[ClassificationRule] | None = config.parameters.get("rules")
+
+        if model is not None and rules is not None:
+            # Real Bayesian inference path: FeatureSnapshot → tokenize → predict → Signal
+            token_set = tokenize(
+                instrument=instrument,
+                time=features.time,
+                features=features.values,
+                rules=rules,
+                close=features.values.get("_close", 0.0),
+            )
+            probability = predict(model, token_set.tokens)
+            return _build_signal(
+                instrument=instrument,
+                generator_id=self.id,
+                probability=probability,
+                confidence=_clamp(features.values.get("confidence", 0.5)),
+                component_scores={"bayesian": probability},
+                metadata={"source": "bayesian_engine", **features.metadata},
+                generated_at=features.time,
+            )
+
+        # Scaffold fallback: use raw score from features
         probability = _clamp(features.values.get("score", 0.5))
         return _build_signal(
             instrument=instrument,

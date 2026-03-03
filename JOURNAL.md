@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-03 13:30 | Stage 2 / T-206 | /ship T-206 | Shipped BayesianV1Generator integration and data-layer fixes — v0.2.6 |
+| 2026-03-03 13:00 | Stage 2 / T-206 | /task T-206 | BayesianV1Generator integration and data-layer fixes — rewrite generator, fix config, add edge case tests |
 | 2026-03-03 12:30 | Stage 2 / T-205 | /ship T-205 | Shipped Bayesian inference engine — v0.2.5 |
 | 2026-03-03 12:00 | Stage 2 / T-205 | /task T-205 | Bayesian inference engine — Naïve Bayes with isotonic calibration, log-odds prediction, phi correlation |
 | 2026-03-03 11:15 | Stage 2 / T-204 | /ship T-204 | Shipped token selection via mutual information — v0.2.4 |

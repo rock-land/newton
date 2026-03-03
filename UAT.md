@@ -59,3 +59,15 @@ Format: checkbox | test description | notes
 | [ ] | `compute_phi_coefficient()` returns 1.0 for identical token activation patterns | |
 | [ ] | `check_correlations()` logs WARNING when `|phi| > 0.7` between any token pair | |
 | [ ] | `check_correlations()` logs ALERT recommending token set reduction when >3 pairs exceed threshold | |
+| [ ] | `BayesianV1Generator` with model and rules in config uses tokenize → predict path (not scaffold fallback) | |
+| [ ] | `BayesianV1Generator` without model in config falls back to `features.values["score"]` scaffold behavior | |
+| [ ] | `BayesianV1Generator.generate()` with informative tokens returns posterior > prior | |
+| [ ] | `BayesianV1Generator.generate()` metadata contains `"source": "bayesian_engine"` when model is provided | |
+| [ ] | `BayesianV1Generator.generate_batch()` returns signals for all snapshots with correct timestamps | |
+| [ ] | End-to-end: train model → tokenize features → predict → Signal produces valid probabilities | |
+| [ ] | `config/feature_providers.json` class path is `src.data.indicators.TechnicalIndicatorProvider` (not `newton.`) | |
+| [ ] | `DECISIONS.md` contains DEC-013 documenting FeatureProvider sync batch signature | |
+| [ ] | `verify_candles([])` returns clean result with zero counts and no issues | |
+| [ ] | `verify_candles()` with zero-volume candles passes OHLC integrity (volume is not an OHLC field) | |
+| [ ] | Indicator provider handles zero-volume candles without error (OBV stays at 0) | |
+| [ ] | Indicator provider handles zero-range candles (open==high==low==close) without error (ATR=0) | |

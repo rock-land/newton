@@ -95,3 +95,10 @@ Format:
 - **Context:** The Dockerfile is currently a stub placeholder (`# Scaffold Dockerfile placeholder`). Containerized deployment is not needed until paper trading (Stage 7) or production deployment (Stage 8). Building a Dockerfile now would require premature decisions about runtime dependencies, environment variables, and service orchestration that will change as the system matures through Stages 2–6.
 - **Consequences:** Dockerfile stub retained per DEC-009 (scaffold pattern). No Docker-based deployment until Stage 7. Development uses local Python environment and `docker compose` for TimescaleDB only.
 - **Status:** Accepted
+
+## DEC-013
+- **Date:** 2026-03-03
+- **Decision:** FeatureProvider uses synchronous batch signature instead of SPEC §3.6 async single-timestamp signature.
+- **Context:** SPEC §3.6 defines `async get_features(instrument, timestamp, lookback) -> dict[str, float]`. The implemented signature is `get_features(*, instrument, interval, candles, lookback) -> dict[datetime, dict[str, float]]` (sync, batch). Batch computation is more efficient for indicators that require lookback windows (e.g., RSI-14 needs 14 prior candles). Async is unnecessary in the current single-process architecture. The batch interface also enables vectorized NumPy/TA-Lib computation across the full candle sequence. Red Team finding SR-H5.
+- **Consequences:** All FeatureProvider implementations use sync batch signature. Callers pass `Sequence[CandleRecord]` and receive per-timestamp feature dicts. If async is needed in a future multi-service architecture, the protocol can be updated with an async wrapper.
+- **Status:** Accepted
