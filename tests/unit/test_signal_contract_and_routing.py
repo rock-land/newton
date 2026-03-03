@@ -11,8 +11,11 @@ from src.trading.signal import (
     GeneratorConfig,
     GeneratorRegistry,
     InstrumentRouting,
+    MLV1Generator,
     RecoverableSignalError,
     SignalRouter,
+    _action_from_probability,
+    _build_signal,
     build_default_router,
 )
 
@@ -158,3 +161,146 @@ def test_instrument_specific_thresholds_apply_differently() -> None:
     assert btc_signal.probability == pytest.approx(shared_probability)
     assert eur_signal.action == "NEUTRAL"
     assert btc_signal.action == "BUY"
+
+
+# --- SR-H1: Strict > thresholds per SPEC §5.7 ---
+
+
+class TestActionFromProbabilityBoundaries:
+    """Probability exactly at a threshold should NOT trigger that action (strict >)."""
+
+    def test_exactly_at_strong_buy_threshold_is_not_strong_buy(self) -> None:
+        assert _action_from_probability(0.65, strong_buy_threshold=0.65) != "STRONG_BUY"
+
+    def test_just_above_strong_buy_threshold(self) -> None:
+        assert _action_from_probability(0.6501, strong_buy_threshold=0.65) == "STRONG_BUY"
+
+    def test_exactly_at_buy_threshold_is_not_buy(self) -> None:
+        assert _action_from_probability(0.55, buy_threshold=0.55) != "BUY"
+
+    def test_just_above_buy_threshold(self) -> None:
+        assert _action_from_probability(0.5501, buy_threshold=0.55) == "BUY"
+
+    def test_exactly_at_sell_threshold_is_neutral(self) -> None:
+        # sell requires < threshold, so exactly at threshold → NEUTRAL
+        assert _action_from_probability(0.40, sell_threshold=0.40) == "NEUTRAL"
+
+    def test_just_below_sell_threshold(self) -> None:
+        assert _action_from_probability(0.3999, sell_threshold=0.40) == "SELL"
+
+    def test_all_defaults_neutral_zone(self) -> None:
+        # Exactly at buy threshold with defaults: 0.55 is not > 0.55
+        assert _action_from_probability(0.55) == "NEUTRAL"
+
+
+# --- SR-M8: Clamp before action computation ---
+
+
+def test_build_signal_clamps_before_action() -> None:
+    """Probability > 1.0 should be clamped to 1.0 before action is computed."""
+    signal = _build_signal(
+        instrument="EUR_USD",
+        generator_id="test",
+        probability=1.5,
+        confidence=0.8,
+        component_scores={},
+        metadata={},
+        generated_at=datetime.now(tz=UTC),
+    )
+    assert signal.probability == 1.0
+    assert signal.action == "STRONG_BUY"
+
+
+def test_build_signal_clamps_negative_probability() -> None:
+    signal = _build_signal(
+        instrument="EUR_USD",
+        generator_id="test",
+        probability=-0.5,
+        confidence=0.8,
+        component_scores={},
+        metadata={},
+        generated_at=datetime.now(tz=UTC),
+    )
+    assert signal.probability == 0.0
+    assert signal.action == "SELL"
+
+
+# --- SR-M1: MLV1Generator is independent (no inheritance from BayesianV1) ---
+
+
+def test_mlv1_does_not_inherit_from_bayesian() -> None:
+    assert not issubclass(MLV1Generator, BayesianV1Generator)
+
+
+def test_mlv1_satisfies_signal_generator_protocol() -> None:
+    from src.analysis.signal_contract import SignalGenerator
+
+    assert isinstance(MLV1Generator(), SignalGenerator)
+
+
+def test_mlv1_generates_signal_independently() -> None:
+    gen = MLV1Generator()
+    cfg = GeneratorConfig(enabled=True, parameters={})
+    features = FeatureSnapshot(
+        instrument="EUR_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"score": 0.6, "confidence": 0.7},
+        metadata={},
+    )
+    signal = gen.generate("EUR_USD", features, cfg)
+    assert signal.generator_id == "ml_v1"
+    assert is_valid_action(signal.action)
+
+
+# --- SR-M2: Ensemble weights must sum to 1.0 ---
+
+
+def test_ensemble_rejects_weights_not_summing_to_one() -> None:
+    from src.trading.signal import EnsembleV1Generator
+
+    gen = EnsembleV1Generator()
+    cfg = GeneratorConfig(enabled=True, parameters={"weights": [1.0, 1.0]})
+    features = FeatureSnapshot(
+        instrument="EUR_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"bayesian_score": 0.5, "ml_score": 0.5},
+        metadata={},
+    )
+    with pytest.raises(RecoverableSignalError, match="sum to 1.0"):
+        gen.generate("EUR_USD", features, cfg)
+
+
+def test_ensemble_accepts_weights_summing_to_one() -> None:
+    from src.trading.signal import EnsembleV1Generator
+
+    gen = EnsembleV1Generator()
+    cfg = GeneratorConfig(enabled=True, parameters={"weights": [0.6, 0.4]})
+    features = FeatureSnapshot(
+        instrument="EUR_USD",
+        interval="1h",
+        time=datetime.now(tz=UTC),
+        values={"bayesian_score": 0.5, "ml_score": 0.5},
+        metadata={},
+    )
+    signal = gen.generate("EUR_USD", features, cfg)
+    assert signal.probability == pytest.approx(0.5)
+
+
+# --- SR-TG5: Registry edge cases ---
+
+
+def test_registry_register_after_freeze_raises() -> None:
+    registry = GeneratorRegistry()
+    registry.register("bayesian_v1", BayesianV1Generator)
+    registry.freeze()
+    with pytest.raises(RuntimeError, match="frozen"):
+        registry.register("new_gen", BayesianV1Generator)
+
+
+def test_registry_get_unknown_generator_raises() -> None:
+    registry = GeneratorRegistry()
+    registry.freeze()
+    with pytest.raises(ValueError, match="Unknown generator"):
+        registry.get("nonexistent")

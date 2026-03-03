@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-03 09:30 | Stage 2 / T-201 | /ship T-201 | Shipped signal-layer fixes — v0.2.1 |
+| 2026-03-03 09:15 | Stage 2 / T-201 | /task T-201 | Resolve deferred Stage 1 signal-layer findings (SR-H1, SR-M1, SR-M2, SR-M8, SR-TG3, SR-TG5) |
 | 2026-03-03 09:00 | Stage 2 / — | /stage-init | Initializing Stage 2: Event Detection & Tokenization |
 | 2026-03-03 08:15 | Stage 1 / T-1G | /ship T-1G | Shipped Stage 1 gate — v0.1.5, merged to main |
 | 2026-03-03 08:10 | Stage 1 / T-1G | /task T-1G | Stage gate validation — all criteria pass, quality gate PASS (55 tests, 85% coverage) |

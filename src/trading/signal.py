@@ -95,8 +95,35 @@ class BayesianV1Generator(_BaseGenerator):
         ]
 
 
-class MLV1Generator(BayesianV1Generator):
+class MLV1Generator(_BaseGenerator):
+    """Scaffold ML signal generator (Stage 3). Independent per DEC-005."""
+
     generator_id = "ml_v1"
+
+    def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
+        if not config.enabled:
+            raise RecoverableSignalError("generator disabled")
+        probability = _clamp(features.values.get("score", 0.5))
+        return _build_signal(
+            instrument=instrument,
+            generator_id=self.id,
+            probability=probability,
+            confidence=_clamp(features.values.get("confidence", 0.5)),
+            component_scores={"ml": probability},
+            metadata={"source": "scaffold", **features.metadata},
+            generated_at=features.time,
+        )
+
+    def generate_batch(
+        self,
+        instrument: str,
+        historical_features: list[FeatureSnapshot],
+        config: GeneratorConfig,
+    ) -> list[tuple[datetime, Signal]]:
+        return [
+            (snapshot.time, self.generate(instrument=instrument, features=snapshot, config=config))
+            for snapshot in historical_features
+        ]
 
 
 class EnsembleV1Generator(_BaseGenerator):
@@ -110,6 +137,8 @@ class EnsembleV1Generator(_BaseGenerator):
         weights = config.parameters.get("weights", [0.6, 0.4])
         if not isinstance(weights, list) or len(weights) != 2:
             raise RecoverableSignalError("invalid ensemble weights")
+        if abs(sum(float(w) for w in weights) - 1.0) > 0.01:
+            raise RecoverableSignalError("ensemble weights must sum to 1.0")
         probability = _clamp((bayesian_score * float(weights[0])) + (ml_score * float(weights[1])))
         confidence = _clamp(1.0 - abs(bayesian_score - ml_score))
         return _build_signal(
@@ -232,9 +261,9 @@ def _action_from_probability(
     buy_threshold: float = 0.55,
     sell_threshold: float = 0.40,
 ) -> SignalAction:
-    if probability >= strong_buy_threshold:
+    if probability > strong_buy_threshold:
         return "STRONG_BUY"
-    if probability >= buy_threshold:
+    if probability > buy_threshold:
         return "BUY"
     if probability < sell_threshold:
         return "SELL"
@@ -250,10 +279,11 @@ def _build_signal(
     metadata: dict[str, Any],
     generated_at: datetime,
 ) -> Signal:
+    clamped_probability = _clamp(probability)
     return Signal(
         instrument=instrument,
-        action=_action_from_probability(probability),
-        probability=_clamp(probability),
+        action=_action_from_probability(clamped_probability),
+        probability=clamped_probability,
         confidence=_clamp(confidence),
         component_scores=component_scores,
         metadata=metadata,

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from fastapi import HTTPException
+import pytest
+
 from src.api.v1 import signals as signals_api
 from src.app import app
 
@@ -37,6 +40,12 @@ def test_signal_endpoint_metadata_has_scaffold_mode() -> None:
 def test_generators_endpoint_includes_scaffold_flag() -> None:
     payload = signals_api.list_signal_generators()
     assert payload["scaffold"] is True
+
+
+def test_signal_endpoint_invalid_instrument_returns_404() -> None:
+    with pytest.raises(HTTPException) as exc_info:
+        signals_api.get_current_signal("INVALID_INSTRUMENT")
+    assert exc_info.value.status_code == 404
 
 
 def test_stage1_endpoints_unchanged_paths_still_registered() -> None:
