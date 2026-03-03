@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 13:00 | Stage 3 / T-302 | /ship T-302 | Shipped model artifact storage and versioning — v0.3.2 |
+| 2026-03-04 12:30 | Stage 3 / T-302 | /task T-302 | Model artifact storage and versioning — save/load with SHA-256 integrity |
 | 2026-03-04 12:00 | Stage 3 / T-301 | /ship T-301 | Shipped feature engineering pipeline — v0.3.1 |
 | 2026-03-04 11:30 | Stage 3 / T-301 | /task T-301 | Feature engineering pipeline — OHLCV returns, indicator features, token flags |
 | 2026-03-04 11:00 | Stage 3 / — | /stage-init | Initialized Stage 3: ML Pipeline with 6 tasks |

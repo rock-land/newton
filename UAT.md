@@ -91,3 +91,18 @@ Format: checkbox | test description | notes
 | [ ] | `build_feature_vector()` for a given timestamp produces the same values as the corresponding row in `build_feature_matrix()` | |
 | [ ] | Insufficient history for lookback window produces empty matrix (training) or raises ValueError (inference) | |
 | [ ] | Zero-volume candles handled safely (no division-by-zero errors) | |
+
+### T-302: Model Artifact Storage and Versioning
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `save_model()` writes model file and `.meta.json` sidecar to `{base_dir}/{instrument}/{model_type}/v{N}.model` | |
+| [ ] | `save_model()` computes SHA-256 hash of model bytes and stores it in metadata | |
+| [ ] | `load_model()` round-trips: saved bytes and metadata match loaded bytes and metadata | |
+| [ ] | `load_model()` with corrupted model file raises `ModelIntegrityError` (hash mismatch) | |
+| [ ] | `load_model()` with `version=None` loads the latest version | |
+| [ ] | `load_model()` for missing model file raises `FileNotFoundError` | |
+| [ ] | `get_latest_version()` returns 0 when no versions exist | |
+| [ ] | `get_latest_version()` returns highest version number after multiple saves | |
+| [ ] | `list_versions()` returns all version metadata sorted ascending by version | |
+| [ ] | `ModelArtifact` is frozen (attribute assignment raises `AttributeError`) | |
