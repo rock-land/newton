@@ -49,3 +49,13 @@ Format: checkbox | test description | notes
 | [ ] | `select_tokens()` returns `SelectedTokenSet` with tokens ranked by MI and redundant tokens dropped | |
 | [ ] | `select_tokens()` with `top_n=100` caps at 50 tokens (SPEC §5.4 max) | |
 | [ ] | `select_tokens()` logs selected token set info at INFO level | |
+| [ ] | `from src.analysis.bayesian import train, predict, BayesianModel` imports without error | |
+| [ ] | `train()` with synthetic token sets and event labels returns `BayesianModel` with `prior`, `likelihoods`, `calibration_x`, `calibration_y` fields | |
+| [ ] | `BayesianModel.likelihoods` contains `TokenLikelihood` entries with Laplace-smoothed `p_given_event` and `p_given_no_event` | |
+| [ ] | `predict()` with no active tokens returns posterior approximately equal to prior | |
+| [ ] | `predict()` with informative token returns posterior higher than prior (for event-correlated token) | |
+| [ ] | `predict()` result never exceeds `posterior_cap` (default 0.90) even with very strong evidence | |
+| [ ] | `train()` with `laplace_alpha=5` produces likelihoods closer to 0.5 than `laplace_alpha=1` | |
+| [ ] | `compute_phi_coefficient()` returns 1.0 for identical token activation patterns | |
+| [ ] | `check_correlations()` logs WARNING when `|phi| > 0.7` between any token pair | |
+| [ ] | `check_correlations()` logs ALERT recommending token set reduction when >3 pairs exceed threshold | |
