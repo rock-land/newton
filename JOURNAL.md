@@ -5,6 +5,27 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 10:45 | Stage 2 / T-2G | /ship T-2G | Shipped Stage 2 gate — v0.2.8, merged to main |
+| 2026-03-04 10:30 | Stage 2 / T-2G | /task T-2G | Stage gate validation — all criteria pass, quality gate PASS (225 tests, 89% coverage) |
+| 2026-03-04 10:15 | Stage 2 / T-206-FIX1 | /ship T-206-FIX1 | Shipped fix for close fallback and threshold inconsistencies — v0.2.7 |
+| 2026-03-04 10:00 | Stage 2 / FIX tasks | /verify-fixes | Verified 1 fix task (T-206-FIX1): PASS — all 3 findings resolved, no regressions |
+| 2026-03-04 09:30 | Stage 2 / T-206-FIX1 | /task T-206-FIX1 | Fix default close fallback, generator override thresholds, and batch thresholds — record DEC-014 |
+| 2026-03-04 09:00 | Stage 2 / — | /stage-report | Compiled stage report: NOT READY — 1 FIX task added (T-206-FIX1) |
+| 2026-03-03 14:30 | Stage 2 / — | /red-review | Red team review completed: FAIL (2 critical, 5 high) |
+| 2026-03-03 14:00 | Stage 2 / — | /review | Code review completed: Ready for merge |
+| 2026-03-03 13:30 | Stage 2 / T-206 | /ship T-206 | Shipped BayesianV1Generator integration and data-layer fixes — v0.2.6 |
+| 2026-03-03 13:00 | Stage 2 / T-206 | /task T-206 | BayesianV1Generator integration and data-layer fixes — rewrite generator, fix config, add edge case tests |
+| 2026-03-03 12:30 | Stage 2 / T-205 | /ship T-205 | Shipped Bayesian inference engine — v0.2.5 |
+| 2026-03-03 12:00 | Stage 2 / T-205 | /task T-205 | Bayesian inference engine — Naïve Bayes with isotonic calibration, log-odds prediction, phi correlation |
+| 2026-03-03 11:15 | Stage 2 / T-204 | /ship T-204 | Shipped token selection via mutual information — v0.2.4 |
+| 2026-03-03 11:00 | Stage 2 / T-204 | /task T-204 | Token selection via mutual information — MI scoring, Jaccard dedup, top-N selection |
+| 2026-03-03 10:45 | Stage 2 / T-203 | /ship T-203 | Shipped tokenizer and classification vocabulary — v0.2.3 |
+| 2026-03-03 10:30 | Stage 2 / T-203 | /task T-203 | Tokenizer and classification vocabulary — indicator-to-token mapping |
+| 2026-03-03 10:15 | Stage 2 / T-202 | /ship T-202 | Shipped event detection and labeling system — v0.2.2 |
+| 2026-03-03 10:00 | Stage 2 / T-202 | /task T-202 | Event detection and labeling system — binary event labeling from OHLCV candles |
+| 2026-03-03 09:30 | Stage 2 / T-201 | /ship T-201 | Shipped signal-layer fixes — v0.2.1 |
+| 2026-03-03 09:15 | Stage 2 / T-201 | /task T-201 | Resolve deferred Stage 1 signal-layer findings (SR-H1, SR-M1, SR-M2, SR-M8, SR-TG3, SR-TG5) |
+| 2026-03-03 09:00 | Stage 2 / — | /stage-init | Initializing Stage 2: Event Detection & Tokenization |
 | 2026-03-03 08:15 | Stage 1 / T-1G | /ship T-1G | Shipped Stage 1 gate — v0.1.5, merged to main |
 | 2026-03-03 08:10 | Stage 1 / T-1G | /task T-1G | Stage gate validation — all criteria pass, quality gate PASS (55 tests, 85% coverage) |
 | 2026-03-03 08:05 | Stage 1 / FIX tasks | /verify-fixes | Verified 1 fix task (T-103-FIX1): PASS — both critical findings resolved |

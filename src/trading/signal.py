@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import logging
 from typing import Any
 
+from src.analysis.bayesian import BayesianModel, predict
 from src.analysis.signal_contract import (
     FeatureSnapshot,
     GeneratorConfig,
@@ -15,6 +16,7 @@ from src.analysis.signal_contract import (
     SignalAction,
     SignalGenerator,
 )
+from src.analysis.tokenizer import ClassificationRule, tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +69,52 @@ class _BaseGenerator:
 
 
 class BayesianV1Generator(_BaseGenerator):
+    """Bayesian signal generator (SPEC §5.5).
+
+    When ``config.parameters`` contains ``"model"`` (a ``BayesianModel``) and
+    ``"rules"`` (a list of ``ClassificationRule``), the generator uses the full
+    Bayesian inference path: tokenize features → predict posterior → Signal.
+
+    Without a model, falls back to scaffold behavior (uses ``features.values["score"]``).
+    """
+
     generator_id = "bayesian_v1"
 
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:
             raise RecoverableSignalError("generator disabled")
+
+        model: BayesianModel | None = config.parameters.get("model")
+        rules: list[ClassificationRule] | None = config.parameters.get("rules")
+
+        thresholds = _extract_thresholds(config)
+
+        if model is not None and rules is not None:
+            # Real Bayesian inference path: FeatureSnapshot → tokenize → predict → Signal
+            if "_close" not in features.values:
+                raise RecoverableSignalError(
+                    "_close required in features for Bayesian inference"
+                )
+            token_set = tokenize(
+                instrument=instrument,
+                time=features.time,
+                features=features.values,
+                rules=rules,
+                close=features.values["_close"],
+            )
+            probability = predict(model, token_set.tokens)
+            return _build_signal(
+                instrument=instrument,
+                generator_id=self.id,
+                probability=probability,
+                confidence=_clamp(features.values.get("confidence", 0.5)),
+                component_scores={"bayesian": probability},
+                metadata={"source": "bayesian_engine", **features.metadata},
+                generated_at=features.time,
+                thresholds=thresholds,
+            )
+
+        # Scaffold fallback: use raw score from features
         probability = _clamp(features.values.get("score", 0.5))
         return _build_signal(
             instrument=instrument,
@@ -81,6 +124,7 @@ class BayesianV1Generator(_BaseGenerator):
             component_scores={"bayesian": probability},
             metadata={"source": "threshold", **features.metadata},
             generated_at=features.time,
+            thresholds=thresholds,
         )
 
     def generate_batch(
@@ -95,8 +139,36 @@ class BayesianV1Generator(_BaseGenerator):
         ]
 
 
-class MLV1Generator(BayesianV1Generator):
+class MLV1Generator(_BaseGenerator):
+    """Scaffold ML signal generator (Stage 3). Independent per DEC-005."""
+
     generator_id = "ml_v1"
+
+    def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
+        if not config.enabled:
+            raise RecoverableSignalError("generator disabled")
+        probability = _clamp(features.values.get("score", 0.5))
+        return _build_signal(
+            instrument=instrument,
+            generator_id=self.id,
+            probability=probability,
+            confidence=_clamp(features.values.get("confidence", 0.5)),
+            component_scores={"ml": probability},
+            metadata={"source": "scaffold", **features.metadata},
+            generated_at=features.time,
+            thresholds=_extract_thresholds(config),
+        )
+
+    def generate_batch(
+        self,
+        instrument: str,
+        historical_features: list[FeatureSnapshot],
+        config: GeneratorConfig,
+    ) -> list[tuple[datetime, Signal]]:
+        return [
+            (snapshot.time, self.generate(instrument=instrument, features=snapshot, config=config))
+            for snapshot in historical_features
+        ]
 
 
 class EnsembleV1Generator(_BaseGenerator):
@@ -110,6 +182,8 @@ class EnsembleV1Generator(_BaseGenerator):
         weights = config.parameters.get("weights", [0.6, 0.4])
         if not isinstance(weights, list) or len(weights) != 2:
             raise RecoverableSignalError("invalid ensemble weights")
+        if abs(sum(float(w) for w in weights) - 1.0) > 0.01:
+            raise RecoverableSignalError("ensemble weights must sum to 1.0")
         probability = _clamp((bayesian_score * float(weights[0])) + (ml_score * float(weights[1])))
         confidence = _clamp(1.0 - abs(bayesian_score - ml_score))
         return _build_signal(
@@ -120,6 +194,7 @@ class EnsembleV1Generator(_BaseGenerator):
             component_scores={"bayesian": bayesian_score, "ml": ml_score},
             metadata={"weights": weights, **features.metadata},
             generated_at=features.time,
+            thresholds=_extract_thresholds(config),
         )
 
     def generate_batch(
@@ -155,10 +230,17 @@ class SignalRouter:
         features: FeatureSnapshot,
         generator_override: str | None = None,
     ) -> Signal:
+        existing = self.routing[instrument]
         selected = (
-            InstrumentRouting(primary=generator_override, fallback=self.routing[instrument].fallback)
+            InstrumentRouting(
+                primary=generator_override,
+                fallback=existing.fallback,
+                strong_buy_threshold=existing.strong_buy_threshold,
+                buy_threshold=existing.buy_threshold,
+                sell_threshold=existing.sell_threshold,
+            )
             if generator_override
-            else self.routing[instrument]
+            else existing
         )
         primary_id = selected.primary
         fallback_id = selected.fallback
@@ -232,9 +314,9 @@ def _action_from_probability(
     buy_threshold: float = 0.55,
     sell_threshold: float = 0.40,
 ) -> SignalAction:
-    if probability >= strong_buy_threshold:
+    if probability > strong_buy_threshold:
         return "STRONG_BUY"
-    if probability >= buy_threshold:
+    if probability > buy_threshold:
         return "BUY"
     if probability < sell_threshold:
         return "SELL"
@@ -249,17 +331,40 @@ def _build_signal(
     component_scores: dict[str, float],
     metadata: dict[str, Any],
     generated_at: datetime,
+    *,
+    thresholds: dict[str, float] | None = None,
 ) -> Signal:
+    clamped_probability = _clamp(probability)
+    action = _action_from_probability(
+        clamped_probability,
+        **(
+            {
+                "strong_buy_threshold": thresholds["strong_buy"],
+                "buy_threshold": thresholds["buy"],
+                "sell_threshold": thresholds["sell"],
+            }
+            if thresholds
+            else {}
+        ),
+    )
     return Signal(
         instrument=instrument,
-        action=_action_from_probability(probability),
-        probability=_clamp(probability),
+        action=action,
+        probability=clamped_probability,
         confidence=_clamp(confidence),
         component_scores=component_scores,
         metadata=metadata,
         generated_at=generated_at,
         generator_id=generator_id,
     )
+
+
+def _extract_thresholds(config: GeneratorConfig) -> dict[str, float] | None:
+    """Extract action thresholds from config.parameters if present."""
+    raw = config.parameters.get("thresholds")
+    if isinstance(raw, dict) and all(k in raw for k in ("strong_buy", "buy", "sell")):
+        return {"strong_buy": float(raw["strong_buy"]), "buy": float(raw["buy"]), "sell": float(raw["sell"])}
+    return None
 
 
 def _clamp(value: float) -> float:

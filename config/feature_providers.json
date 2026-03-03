@@ -2,7 +2,7 @@
   "providers": [
     {
       "name": "technical",
-      "class": "newton.data.indicators.TechnicalIndicatorProvider",
+      "class": "src.data.indicators.TechnicalIndicatorProvider",
       "namespace": "technical",
       "enabled": true,
       "config": {

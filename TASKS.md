@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.1.0` (Stage 1, Task 0)
-**Latest Release:** —
+**Current Version:** `0.2.8` (Stage 2 complete)
+**Latest Release:** `0.2.8` (Stage 2 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -11,6 +11,9 @@ Status: Active
 | Version | Stage | Milestone |
 |---------|-------|-----------|
 | 0.1.0 | 1 | Stage 1 start |
+| 0.1.5 | 1 | Stage 1 complete |
+| 0.2.0 | 2 | Stage 2 start |
+| 0.2.8 | 2 | Stage 2 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -73,6 +76,23 @@ The following work was completed before governance was established. This is not 
 | T-103 | Remove stale client entry point and record Dockerfile deferral | fullstack | `client/src/main.js` deleted; DEC-012 recorded in DECISIONS.md deferring Dockerfile implementation to Stage 7; Dockerfile unchanged (stub retained) | DONE |
 | T-103-FIX1 | Fix hardcoded URL validation in fetchers and add exception logging to health checks | server | Oanda fetcher validates against configured `self._base_url` netloc, not hardcoded practice domain; Binance fetcher applies same fix for testnet compatibility; health check `except` blocks log exceptions via `logger.exception()` before returning defaults; existing tests still pass; new tests verify URL validation accepts configured base URLs | DONE |
 | T-1G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with >=80% coverage; all T-1xx tasks DONE | DONE |
+
+---
+
+## Stage 2: Event Detection & Tokenization
+
+**Branch:** `stage/2-event-detection`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-201 | Resolve deferred Stage 1 signal-layer findings | server | `_action_from_probability` uses strict `>` per SPEC §5.7; `MLV1Generator` is independent class (no inheritance from BayesianV1); ensemble weights validated to sum to 1.0 (±0.01); `_build_signal` clamps probability before computing action; tests cover probability at each threshold boundary; tests cover register-after-freeze, unknown generator_id, invalid instrument 404 on signal endpoint | DONE |
+| T-202 | Event detection and labeling system | server | `src/analysis/events.py` implemented; event types loaded from strategy config `events` field; given OHLCV candles, labels each timestamp with binary event occurrence (e.g., "price moved ≥1% in next 24h"); frozen `EventLabel` dataclass; both instruments supported; tests with synthetic candle data | DONE |
+| T-203 | Tokenizer and classification vocabulary | server | `src/analysis/tokenizer.py` implemented; classification rules defined for RSI, MACD, BB, OBV, ATR; `config/classifications/EUR_USD_classifications.json` and `BTC_USD_classifications.json` populated with token vocabularies; token format matches SPEC §5.3 (`{INSTRUMENT}_{PREFIX}_{PARAM}_{DATAPOINT}_{TYPE}_{VALUE}`); frozen `TokenSet` dataclass; tests verify token generation for known indicator values | DONE |
+| T-204 | Token selection via mutual information | server | `src/analysis/token_selection.py` implemented; computes MI `I(Token; Event)` for all tokens; ranks by MI score; Jaccard similarity dedup (threshold from config, default 0.85); selects top-N tokens (from config, default 20, max 50); returns selected set with scores; tests with synthetic data verify ranking, dedup, and selection | DONE |
+| T-205 | Bayesian inference engine | server | `src/analysis/bayesian.py` implemented; training computes prior P(Event) and likelihoods P(Token\|Event) with Laplace smoothing (configurable alpha); prediction uses log-odds form (numerically stable); isotonic calibration on out-of-fold predictions; posterior cap (configurable, default 0.90); phi correlation check with warning if \|phi\| > 0.7; frozen `BayesianModel` dataclass for trained params; tests verify posterior math, calibration, capping, and correlation alerts | DONE |
+| T-206 | BayesianV1Generator integration and data-layer fixes | server | `BayesianV1Generator` in `signal.py` rewritten to use Bayesian engine; inference path: FeatureSnapshot → tokenize → predict → Signal; DEC-013 recorded for FeatureProvider sync batch signature decision (SR-H5); `feature_providers.json` class path fixed (SR-H6); data-layer edge case tests added (SR-TG4: empty candle list, zero-volume candles); end-to-end integration test with synthetic data passes | DONE |
+| T-206-FIX1 | Fix default close fallback and action threshold inconsistencies in signal generators | server | `BayesianV1Generator.generate()` raises `RecoverableSignalError` when `_close` missing from features (model+rules present); generator override in `route_signal` preserves instrument-specific thresholds; `generate_batch()` signals use instrument-appropriate thresholds; DEC-014 recorded for event labeling high-watermark approach; quality gate passes | DONE |
+| T-2G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-2xx tasks DONE | DONE |
 
 ---
 

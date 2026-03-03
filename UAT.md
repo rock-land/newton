@@ -33,3 +33,47 @@ Format: checkbox | test description | notes
 | [ ] | Oanda fetcher URL validation accepts configured `base_url` (e.g., live `api-fxtrade.oanda.com`) without ValueError | |
 | [ ] | Binance fetcher URL validation accepts configured `base_url` (e.g., testnet `testnet.binance.vision`) without ValueError | |
 | [ ] | Health check database failures are logged (not silently swallowed) — check logs when DB is unavailable | |
+
+## Stage 2: Event Detection & Tokenization
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | `from src.analysis.events import label_events, EventLabel` imports without error | |
+| [ ] | `label_events()` with synthetic candles returns `EventLabel` objects with `event_type`, `time`, `label` fields | |
+| [ ] | `from src.analysis.tokenizer import tokenize, load_classifications, TokenSet` imports without error | |
+| [ ] | `load_classifications("config/classifications/EUR_USD_classifications.json")` returns 22 rules | |
+| [ ] | `load_classifications("config/classifications/BTC_USD_classifications.json")` returns 22 rules | |
+| [ ] | `tokenize()` returns `TokenSet` with `frozenset` of active tokens matching classification rules | |
+| [ ] | `from src.analysis.token_selection import select_tokens, compute_mutual_information` imports without error | |
+| [ ] | `compute_mutual_information()` returns `TokenScore` list sorted descending by MI score | |
+| [ ] | `select_tokens()` returns `SelectedTokenSet` with tokens ranked by MI and redundant tokens dropped | |
+| [ ] | `select_tokens()` with `top_n=100` caps at 50 tokens (SPEC §5.4 max) | |
+| [ ] | `select_tokens()` logs selected token set info at INFO level | |
+| [ ] | `from src.analysis.bayesian import train, predict, BayesianModel` imports without error | |
+| [ ] | `train()` with synthetic token sets and event labels returns `BayesianModel` with `prior`, `likelihoods`, `calibration_x`, `calibration_y` fields | |
+| [ ] | `BayesianModel.likelihoods` contains `TokenLikelihood` entries with Laplace-smoothed `p_given_event` and `p_given_no_event` | |
+| [ ] | `predict()` with no active tokens returns posterior approximately equal to prior | |
+| [ ] | `predict()` with informative token returns posterior higher than prior (for event-correlated token) | |
+| [ ] | `predict()` result never exceeds `posterior_cap` (default 0.90) even with very strong evidence | |
+| [ ] | `train()` with `laplace_alpha=5` produces likelihoods closer to 0.5 than `laplace_alpha=1` | |
+| [ ] | `compute_phi_coefficient()` returns 1.0 for identical token activation patterns | |
+| [ ] | `check_correlations()` logs WARNING when `|phi| > 0.7` between any token pair | |
+| [ ] | `check_correlations()` logs ALERT recommending token set reduction when >3 pairs exceed threshold | |
+| [ ] | `BayesianV1Generator` with model and rules in config uses tokenize → predict path (not scaffold fallback) | |
+| [ ] | `BayesianV1Generator` without model in config falls back to `features.values["score"]` scaffold behavior | |
+| [ ] | `BayesianV1Generator.generate()` with informative tokens returns posterior > prior | |
+| [ ] | `BayesianV1Generator.generate()` metadata contains `"source": "bayesian_engine"` when model is provided | |
+| [ ] | `BayesianV1Generator.generate_batch()` returns signals for all snapshots with correct timestamps | |
+| [ ] | End-to-end: train model → tokenize features → predict → Signal produces valid probabilities | |
+| [ ] | `config/feature_providers.json` class path is `src.data.indicators.TechnicalIndicatorProvider` (not `newton.`) | |
+| [ ] | `DECISIONS.md` contains DEC-013 documenting FeatureProvider sync batch signature | |
+| [ ] | `verify_candles([])` returns clean result with zero counts and no issues | |
+| [ ] | `verify_candles()` with zero-volume candles passes OHLC integrity (volume is not an OHLC field) | |
+| [ ] | Indicator provider handles zero-volume candles without error (OBV stays at 0) | |
+| [ ] | Indicator provider handles zero-range candles (open==high==low==close) without error (ATR=0) | |
+| [ ] | `BayesianV1Generator.generate()` raises `RecoverableSignalError` when `_close` is missing from features and model+rules are present | |
+| [ ] | `BayesianV1Generator.generate()` without model/rules (scaffold path) does not require `_close` in features | |
+| [ ] | `SignalRouter.route_signal()` with `generator_override` uses instrument-specific thresholds (not defaults) | |
+| [ ] | `generate_batch()` with thresholds in `config.parameters` uses those thresholds for action computation | |
+| [ ] | `generate_batch()` without thresholds in `config.parameters` uses default thresholds (backward compatible) | |
+| [ ] | `DECISIONS.md` contains DEC-014 documenting event labeling high-watermark approach | |
