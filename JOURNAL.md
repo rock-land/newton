@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-03 11:15 | Stage 2 / T-204 | /ship T-204 | Shipped token selection via mutual information — v0.2.4 |
+| 2026-03-03 11:00 | Stage 2 / T-204 | /task T-204 | Token selection via mutual information — MI scoring, Jaccard dedup, top-N selection |
 | 2026-03-03 10:45 | Stage 2 / T-203 | /ship T-203 | Shipped tokenizer and classification vocabulary — v0.2.3 |
 | 2026-03-03 10:30 | Stage 2 / T-203 | /task T-203 | Tokenizer and classification vocabulary — indicator-to-token mapping |
 | 2026-03-03 10:15 | Stage 2 / T-202 | /ship T-202 | Shipped event detection and labeling system — v0.2.2 |

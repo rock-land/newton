@@ -33,3 +33,19 @@ Format: checkbox | test description | notes
 | [ ] | Oanda fetcher URL validation accepts configured `base_url` (e.g., live `api-fxtrade.oanda.com`) without ValueError | |
 | [ ] | Binance fetcher URL validation accepts configured `base_url` (e.g., testnet `testnet.binance.vision`) without ValueError | |
 | [ ] | Health check database failures are logged (not silently swallowed) — check logs when DB is unavailable | |
+
+## Stage 2: Event Detection & Tokenization
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | `from src.analysis.events import label_events, EventLabel` imports without error | |
+| [ ] | `label_events()` with synthetic candles returns `EventLabel` objects with `event_type`, `time`, `label` fields | |
+| [ ] | `from src.analysis.tokenizer import tokenize, load_classifications, TokenSet` imports without error | |
+| [ ] | `load_classifications("config/classifications/EUR_USD_classifications.json")` returns 22 rules | |
+| [ ] | `load_classifications("config/classifications/BTC_USD_classifications.json")` returns 22 rules | |
+| [ ] | `tokenize()` returns `TokenSet` with `frozenset` of active tokens matching classification rules | |
+| [ ] | `from src.analysis.token_selection import select_tokens, compute_mutual_information` imports without error | |
+| [ ] | `compute_mutual_information()` returns `TokenScore` list sorted descending by MI score | |
+| [ ] | `select_tokens()` returns `SelectedTokenSet` with tokens ranked by MI and redundant tokens dropped | |
+| [ ] | `select_tokens()` with `top_n=100` caps at 50 tokens (SPEC §5.4 max) | |
+| [ ] | `select_tokens()` logs selected token set info at INFO level | |
