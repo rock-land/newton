@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from src.data.fetcher_oanda import (
     OandaCandle,
     OandaEURUSDFetcher,
     OandaHTTPClient,
+    UrllibOandaHTTPClient,
     store_verified_candles,
 )
 
@@ -118,3 +121,28 @@ def test_fetch_historical_uses_oanda_time_range_params() -> None:
     assert client.last_params["from"] == "2026-02-01T00:00:00Z"
     assert client.last_params["to"] == "2026-02-02T00:00:00Z"
     assert client.last_params["granularity"] == "H1"
+
+
+def test_oanda_url_validation_accepts_configured_base_url() -> None:
+    """UrllibOandaHTTPClient should accept URLs matching its configured base_url."""
+    from unittest.mock import MagicMock, patch
+
+    live_url = "https://api-fxtrade.oanda.com"
+    client = UrllibOandaHTTPClient(api_key="test-key", base_url=live_url)
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'{"candles": []}'
+    mock_response.__enter__ = lambda s: s
+    mock_response.__exit__ = MagicMock(return_value=False)
+
+    with patch("src.data.fetcher_oanda.urlopen", return_value=mock_response):
+        # Should NOT raise ValueError — URL matches configured base
+        result = client.get_json("/v3/instruments/EUR_USD/candles", {"count": "1"})
+    assert result == {"candles": []}
+
+
+def test_oanda_url_validation_rejects_mismatched_netloc() -> None:
+    """UrllibOandaHTTPClient should reject URLs that don't match configured base_url."""
+    client = UrllibOandaHTTPClient(api_key="test-key", base_url="https://api-fxpractice.oanda.com")
+    with pytest.raises(ValueError, match="unexpected oanda URL"):
+        client.get_json("https://evil.com/v3/instruments/EUR_USD/candles", {"count": "1"})

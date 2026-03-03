@@ -7,6 +7,7 @@ import numpy as np
 import talib
 
 from src.data.fetcher_base import CandleRecord
+import src.data.indicators as indicators_module
 from src.data.indicators import TechnicalIndicatorConfig, TechnicalIndicatorProvider
 from src.data.pipeline import run_ingestion_cycle
 
@@ -275,3 +276,87 @@ def test_ingestion_cycle_wires_features_and_metadata() -> None:
     assert result.metadata_count == metadata_store.count
     assert result.feature_count > 0
     assert result.metadata_count == 9
+
+
+def test_manual_fallback_produces_valid_outputs(monkeypatch: object) -> None:
+    """Exercise the pure-Python fallback path by disabling TA-Lib."""
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()  # noqa: F841 — need a fresh monkeypatch
+    monkeypatch.setattr(indicators_module, "talib", None)
+
+    try:
+        candles = _random_walk_candles(count=100, seed=42)
+        cfg = TechnicalIndicatorConfig(
+            rsi_period=5,
+            macd_fast=5,
+            macd_slow=10,
+            macd_signal=3,
+            bb_period=5,
+            bb_std=2.0,
+            atr_period=5,
+        )
+        provider = TechnicalIndicatorProvider(cfg)
+        out = provider.get_features(instrument="EUR_USD", interval="1h", candles=candles, lookback=100)
+
+        assert len(out) > 0
+
+        # Check a fully-warmed-up timestamp has all expected features
+        last_ts = max(out.keys())
+        last = out[last_ts]
+        assert f"rsi:period={cfg.rsi_period}" in last
+        assert f"macd:fast={cfg.macd_fast},slow={cfg.macd_slow},signal={cfg.macd_signal}:line" in last
+        assert f"macd:fast={cfg.macd_fast},slow={cfg.macd_slow},signal={cfg.macd_signal}:signal" in last
+        assert f"macd:fast={cfg.macd_fast},slow={cfg.macd_slow},signal={cfg.macd_signal}:histogram" in last
+        assert f"bb:period={cfg.bb_period},std={cfg.bb_std}:upper" in last
+        assert f"bb:period={cfg.bb_period},std={cfg.bb_std}:middle" in last
+        assert f"bb:period={cfg.bb_period},std={cfg.bb_std}:lower" in last
+        assert "obv:" in last
+        assert f"atr:period={cfg.atr_period}" in last
+
+        # Verify RSI is in valid range
+        rsi = last[f"rsi:period={cfg.rsi_period}"]
+        assert 0 <= rsi <= 100
+
+        # Verify Bollinger Bands ordering
+        bb_upper = last[f"bb:period={cfg.bb_period},std={cfg.bb_std}:upper"]
+        bb_middle = last[f"bb:period={cfg.bb_period},std={cfg.bb_std}:middle"]
+        bb_lower = last[f"bb:period={cfg.bb_period},std={cfg.bb_std}:lower"]
+        assert bb_upper >= bb_middle >= bb_lower
+
+        # Verify ATR is positive
+        atr_val = last[f"atr:period={cfg.atr_period}"]
+        assert atr_val > 0
+    finally:
+        monkeypatch.undo()
+
+
+def test_manual_fallback_short_data_returns_nones(monkeypatch: object) -> None:
+    """Manual fallback handles too-short data gracefully (returns Nones for warmup)."""
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()  # noqa: F841
+    monkeypatch.setattr(indicators_module, "talib", None)
+
+    try:
+        # Only 3 candles — shorter than most indicator periods
+        candles = _candles()[:3]
+        cfg = TechnicalIndicatorConfig(
+            rsi_period=5,
+            macd_fast=5,
+            macd_slow=10,
+            macd_signal=3,
+            bb_period=5,
+            bb_std=2.0,
+            atr_period=5,
+        )
+        provider = TechnicalIndicatorProvider(cfg)
+        out = provider.get_features(instrument="EUR_USD", interval="1h", candles=candles, lookback=10)
+
+        # Should still return data (OBV works on any length)
+        assert len(out) > 0
+        # OBV should always be present
+        for ts_features in out.values():
+            assert "obv:" in ts_features
+    finally:
+        monkeypatch.undo()

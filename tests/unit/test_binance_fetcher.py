@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from src.data.fetcher_binance import (
     BinanceBTCUSDTFetcher,
     BinanceCandle,
     BinanceHTTPClient,
+    UrllibBinanceHTTPClient,
     store_verified_candles,
 )
 
@@ -138,3 +141,28 @@ def test_fetch_historical_uses_binance_time_range_params() -> None:
     assert client.last_params["interval"] == "1h"
     assert client.last_params["startTime"] == str(int(datetime(2026, 2, 1, 0, 0, tzinfo=UTC).timestamp() * 1000))
     assert client.last_params["endTime"] == str(int(datetime(2026, 2, 2, 0, 0, tzinfo=UTC).timestamp() * 1000))
+
+
+def test_binance_url_validation_accepts_configured_base_url() -> None:
+    """UrllibBinanceHTTPClient should accept URLs matching its configured base_url."""
+    from unittest.mock import MagicMock, patch
+
+    testnet_url = "https://testnet.binance.vision"
+    client = UrllibBinanceHTTPClient(base_url=testnet_url)
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'[]'
+    mock_response.__enter__ = lambda s: s
+    mock_response.__exit__ = MagicMock(return_value=False)
+
+    with patch("src.data.fetcher_binance.urlopen", return_value=mock_response):
+        # Should NOT raise ValueError — URL matches configured base
+        result = client.get_json("/api/v3/klines", {"symbol": "BTCUSDT", "interval": "1h", "limit": "1"})
+    assert result == []
+
+
+def test_binance_url_validation_rejects_mismatched_netloc() -> None:
+    """UrllibBinanceHTTPClient should reject URLs that don't match configured base_url."""
+    client = UrllibBinanceHTTPClient(base_url="https://api.binance.com")
+    with pytest.raises(ValueError, match="unexpected binance URL"):
+        client.get_json("https://evil.com/api/v3/klines", {"symbol": "BTCUSDT"})

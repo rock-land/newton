@@ -1,4 +1,4 @@
-# {PROJECT_NAME} Decisions Log
+# Newton Decisions Log
 
 Purpose: Record key engineering/product decisions and rationale to prevent drift and re-litigation.
 
@@ -10,37 +10,88 @@ Format:
 - Consequences
 - Status: Proposed / Accepted / Superseded
 
-<!--
-BOOTSTRAP NOTE (for Claude):
-
-When setting up a new project, seed this file with foundational decisions derived from:
-1. The tech stack chosen (language, framework, database, etc.)
-2. Architectural patterns from SPEC.md (monolith vs microservices, API style, etc.)
-3. Quality standards (linting rules, coverage targets, type checking strictness)
-4. Git workflow (stage branches, merge strategy)
-5. Any constraints the user specifies during setup
-
-Typical early decisions to record:
-- Tech stack selection and rationale
-- Config-driven design (if applicable)
-- Git workflow and branch strategy
-- Quality gate standards
-- Client framework choice (if applicable)
-- Deployment target and constraints
--->
-
 ---
 
 ## DEC-001
-- **Date:** YYYY-MM-DD
+- **Date:** 2026-02-19
 - **Decision:** `SPEC.md` is the canonical specification. Decision precedence: `DECISIONS.md` > `SPEC.md`.
 - **Context:** A single source of truth prevents ambiguity and spec drift.
 - **Consequences:** Implementation must follow SPEC.md unless a decision log entry explicitly overrides it.
 - **Status:** Accepted
 
 ## DEC-002
-- **Date:** YYYY-MM-DD
+- **Date:** 2026-02-19
 - **Decision:** Git workflow enforces stage branches with push on each task completion.
 - **Context:** Avoid local-only drift and ensure progress is auditable.
 - **Consequences:** On each task marked DONE, commit + push to current stage branch; merge to `main` only at stage completion.
+- **Status:** Accepted
+
+## DEC-003
+- **Date:** 2026-02-19
+- **Decision:** Python 3.11+ monolith with FastAPI as the server framework.
+- **Context:** Solo developer (A6); manageable complexity. Modules separated by directory and interface; extraction to services deferred to when needed. FastAPI chosen for async support, automatic OpenAPI docs, and Pydantic integration.
+- **Consequences:** All server code lives in `src/`. No microservice boundaries. Type hints required throughout (mypy strict mode).
+- **Status:** Accepted
+
+## DEC-004
+- **Date:** 2026-02-19
+- **Decision:** TimescaleDB (PostgreSQL 16 + TimescaleDB extension) for all time-series storage.
+- **Context:** OHLCV candles and features are time-series data. TimescaleDB hypertables optimize range queries, compression, and retention policies. PostgreSQL provides relational capabilities for non-time-series data (trades, config, reconciliation).
+- **Consequences:** `ohlcv` and `features` tables are hypertables. Requires Docker (or managed service) for TimescaleDB. Connection via psycopg (binary).
+- **Status:** Accepted
+
+## DEC-005
+- **Date:** 2026-02-19
+- **Decision:** Protocol-based abstractions over inheritance for all pluggable components.
+- **Context:** Python `Protocol` classes (PEP 544) enable structural subtyping, making components testable via duck typing without inheritance coupling. Enables clean mocking in tests.
+- **Consequences:** `FeatureProvider`, `SignalGenerator`, `BrokerAdapter`, and HTTP client interfaces are all `Protocol` classes. Implementations satisfy the protocol without inheriting from it.
+- **Status:** Accepted
+
+## DEC-006
+- **Date:** 2026-02-19
+- **Decision:** TA-Lib as the canonical technical indicator engine with pure Python fallback.
+- **Context:** SPEC.md §2.1 mandates preferring mature, well-tested libraries. TA-Lib is the industry standard. Pure Python fallback ensures the system runs in environments where the C library is unavailable.
+- **Consequences:** `src/data/indicators.py` implements dual-mode: TA-Lib when available, manual computation otherwise. Parity tests verify equivalence between implementations.
+- **Status:** Accepted
+
+## DEC-007
+- **Date:** 2026-02-19
+- **Decision:** Configuration-driven design with Pydantic v2 validation and cross-field constraints.
+- **Context:** All system parameters must be externalized (SPEC.md §7). Pydantic v2 provides runtime validation with type coercion, cross-field validators, and JSON schema generation.
+- **Consequences:** Config schemas live in `src/data/schema.py`. Config files in `config/` directory. Precedence: per-instrument `risk_overrides` > global `risk.json` defaults. Invalid config fails fast at load time.
+- **Status:** Accepted
+
+## DEC-008
+- **Date:** 2026-02-19
+- **Decision:** Dual-broker architecture: Oanda (EUR/USD forex spot) and Binance (BTC/USD crypto spot BTCUSDT pair).
+- **Context:** SPEC.md §1.2 mandates two instruments from day one to force true multi-instrument architecture. v1 is spot-only — no futures, leverage, or margin.
+- **Consequences:** Separate fetcher implementations per broker. `BrokerAdapter` protocol unifies order/position management. Volume normalization differs (Oanda: base currency, Binance: quote currency USDT).
+- **Status:** Accepted
+
+## DEC-009
+- **Date:** 2026-02-19
+- **Decision:** Staged scaffold pattern — empty module files retained across all stages to lock API naming.
+- **Context:** Prevents naming drift between stages. Module files (events.py, bayesian.py, broker_base.py, etc.) exist as scaffolds with TODO comments referencing their target stage.
+- **Consequences:** Empty modules have a single docstring. They are not dead code — they are placeholders aligned to SPEC.md section references. Do not delete them.
+- **Status:** Accepted
+
+## DEC-010
+- **Date:** 2026-02-19
+- **Decision:** Immutable frozen dataclasses for all domain models.
+- **Context:** Prevents accidental mutation of candle records, signals, features, and other domain objects. Enables safe sharing across async contexts.
+- **Consequences:** All data transfer objects use `@dataclass(frozen=True)`. Mutations require creating a new instance.
+- **Status:** Accepted
+
+## DEC-011
+- **Date:** 2026-02-19
+- **Decision:** Signal generator registry with fallback chains (primary → fallback → neutral fail-safe).
+- **Context:** SPEC.md §5.2 mandates swappable signal generators with per-instrument routing. Fallback chain ensures the system always produces a signal, even on generator failure.
+- **Consequences:** `GeneratorRegistry` is mutable at boot, frozen at runtime. `SignalRouter` attempts primary generator, falls back to secondary on `RecoverableSignalError`, emits `neutral_fail_safe_signal` if all fail. Fallback events are logged.
+- **Status:** Accepted
+
+## DEC-012
+- **Date:** 2026-03-02
+- **Decision:** Defer Dockerfile implementation to Stage 7 (Paper Trading).
+- **Context:** The Dockerfile is currently a stub placeholder (`# Scaffold Dockerfile placeholder`). Containerized deployment is not needed until paper trading (Stage 7) or production deployment (Stage 8). Building a Dockerfile now would require premature decisions about runtime dependencies, environment variables, and service orchestration that will change as the system matures through Stages 2–6.
+- **Consequences:** Dockerfile stub retained per DEC-009 (scaffold pattern). No Docker-based deployment until Stage 7. Development uses local Python environment and `docker compose` for TimescaleDB only.
 - **Status:** Accepted

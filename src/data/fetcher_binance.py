@@ -34,7 +34,8 @@ class UrllibBinanceHTTPClient:
         query = urlencode(params)
         url = f"{self._base_url}{path}?{query}"
         parsed = urlparse(url)
-        if parsed.scheme != "https" or parsed.netloc != "api.binance.com":
+        expected_netloc = urlparse(self._base_url).netloc
+        if parsed.scheme != "https" or parsed.netloc != expected_netloc:
             msg = f"unexpected binance URL: {url}"
             raise ValueError(msg)
         with urlopen(url, timeout=30) as response:  # nosec B310

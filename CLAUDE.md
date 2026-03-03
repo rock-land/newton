@@ -2,115 +2,125 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Bootstrap Status: UNCUSTOMIZED
-
-**If you see this section, this project was created from a template and has not been set up yet.**
-
-When the user first opens this project (or asks you to set it up, or asks you to start work), run the bootstrap process:
-
-### Bootstrap Process (New Project)
-
-1. **Read `SPEC.md`** — this is the canonical specification the user has placed in the project root
-2. **Read all governance files** — `TASKS.md`, `DECISIONS.md`, `REVIEWS.md`, `VERSION`
-3. **Read all command files** in `.claude/commands/` to understand the workflow system
-4. **Customize ALL files** based on what you learn from SPEC.md:
-   - **This file (`CLAUDE.md`)** — fill in Project Overview, Commands, Architecture, Key Decisions; delete this Bootstrap section when done
-   - **`TASKS.md`** — set up the template (do NOT populate Stage 1 tasks yet — that happens via `/stage-init`)
-   - **`DECISIONS.md`** — record foundational decisions (tech stack, architecture patterns, quality standards, git workflow)
-   - **`.claude/commands/*.md`** — replace `{PROJECT_NAME}`, fill in all `<!-- CUSTOMIZE: -->` sections with project-specific details
-   - **`.claude/settings.local.json`** — add permission whitelist entries for your quality gate commands (lint, typecheck, test)
-5. **Present the setup to the user for review** before starting implementation work
-6. **Prompt the user to run `/stage-init`** to initialize Stage 1 with tasks derived from the spec
-7. **Delete this Bootstrap section** from CLAUDE.md after customization is complete
-
-The template uses `{PROJECT_NAME}` as a placeholder throughout — replace it everywhere.
-
-### Bootstrap Process (Existing Project)
-
-If bootstrapping an **existing project** (source code already exists, no governance files), OR if the user runs `/bootstrap-existing`:
-
-1. **Copy bootstrap files** into the project (CLAUDE.md, TASKS.md, DECISIONS.md, REVIEWS.md, VERSION, .claude/commands/*)
-2. **Review the existing project** — read all source files, understand the architecture, tech stack, patterns, and current state
-3. **Customize all files** based on what you learn:
-   - **`CLAUDE.md`** — fill in Project Overview, Commands, Architecture, Key Decisions from the actual codebase
-   - **`TASKS.md`** — write a summary of completed work to date (no need to retroactively create stages/tasks). The first stage can address any issues found during review before commencing new feature development
-   - **`DECISIONS.md`** — record existing architectural decisions discovered in the codebase
-   - **`REVIEWS.md`** — perform a **Baseline Audit** of the codebase and write structured findings (these feed into Stage 1 task generation via `/stage-init`)
-   - **`.claude/commands/*.md`** — replace `{PROJECT_NAME}`, fill in CUSTOMIZE sections with project-specific details
-   - **`.claude/settings.local.json`** — add permission whitelist entries for quality gate commands
-4. **Present the setup to the user for review**
-5. **Prompt the user to run `/stage-init`** to initialize the first governance stage
-6. **Delete this Bootstrap section** from CLAUDE.md after customization is complete
-
----
-
 ## Project Overview
 
-<!-- CUSTOMIZE: Replace with a 2-3 sentence project description from SPEC.md. Include what the app does, who it's for, and what makes it distinctive. -->
-
-{PROJECT_NAME} is [brief description]. The canonical specification is `SPEC.md`. Decision precedence: `DECISIONS.md` > `SPEC.md`.
+Newton is a fully automated multi-instrument trading system that generates sustainable income using a hybrid machine-learning approach (Bayesian + XGBoost) to identify and execute trades across forex (EUR/USD via Oanda) and cryptocurrency (BTC/USD via Binance spot) markets. The canonical specification is `SPEC.md`. Decision precedence: `DECISIONS.md` > `SPEC.md`.
 
 **Current status:** Stage 1 in progress (v0.1.0).
 
 ## Commands
 
-<!-- CUSTOMIZE: Replace with your project's actual commands. These are the commands Claude and you will run frequently. -->
-
 ```bash
 # Quality checks (run before committing)
-# [linter] .                # Linting
-# [type-checker] src        # Type checking
-# [test-runner] -q          # All tests
-# [test-runner] --cov       # Tests with coverage
+ruff check .                    # Linting
+mypy src                        # Type checking
+pytest -q                       # All tests
+pytest --cov=src -q             # Tests with coverage
 
 # Development server
-# [command to start dev server]
+./scripts/run_api.sh
+# or: uvicorn src.app:app --reload --port 8000
 
-# Database (if applicable)
-# [command to start database]
-# [command to initialize schema]
+# Database
+docker compose up -d            # Start TimescaleDB
+python scripts/db_bootstrap.py  # Apply migrations
+python scripts/db_status.py     # Check DB status
 
-# Client (if applicable)
-# cd client && npm install && npm run build && npm start
+# Client
+cd client && npm install && npm run build && npm start
 ```
 
 ## Code Quality Configuration
 
-<!-- CUSTOMIZE: List your linter, type checker, test runner, and their config files. -->
-
-- **Linter:** [tool] — [key settings] ([config file])
-- **Type checker:** [tool] — [key settings] ([config file])
-- **Test runner:** [tool] — [key settings] ([config file])
-- **Coverage targets:** >=80% global; 100% branch on critical modules
+- **Linter:** ruff — line-length 100, target Python 3.11 (`.ruff.toml`)
+- **Type checker:** mypy — strict mode, ignore_missing_imports (`mypy.ini`)
+- **Test runner:** pytest — testpaths=tests, pythonpath=src (`pytest.ini`)
+- **Coverage targets:** >=80% global; 100% branch on critical modules (data pipeline, signal routing, risk management)
 
 ## Architecture
 
-<!-- CUSTOMIZE: Document your tech stack, key abstractions, directory structure, and design patterns. This section is critical — it's what Claude reads to understand how to write code that fits your project. -->
-
-**Stack:** [languages / frameworks / databases / key libraries]
+**Stack:** Python 3.11+ / FastAPI / TimescaleDB (PostgreSQL 16) / Pydantic v2 / TA-Lib / React+TypeScript (client) / Tailwind CSS (dark mode)
 
 ### Key abstractions
 
-<!-- List your protocol/interface classes and where they live. -->
+| Protocol / Interface | Location | Purpose |
+|---|---|---|
+| `FeatureProvider` | `src/data/feature_provider.py` | Pluggable feature sources (technical indicators, future: sentiment, order book) |
+| `SignalGenerator` | `src/analysis/signal_contract.py` | Swappable signal generation strategies (Bayesian, ML, Ensemble) |
+| `OandaHTTPClient` | `src/data/fetcher_oanda.py` | Oanda REST API abstraction for testability |
+| `BinanceHTTPClient` | `src/data/fetcher_binance.py` | Binance REST API abstraction for testability |
+| `RecentFetcher` | `src/data/pipeline.py` | Fetcher abstraction for ingestion orchestration |
+| `BrokerAdapter` | `src/trading/broker_base.py` | Multi-broker order/position interface (Oanda, Binance) |
+
+### Design patterns
+
+- **Protocol pattern:** Runtime-checkable protocols for all abstractions (no inheritance)
+- **Registry pattern:** `GeneratorRegistry` in `src/trading/signal.py` for signal generators
+- **Fallback chain:** Primary → fallback → neutral fail-safe for signal generation
+- **Immutable domain models:** All data transfer objects use `@dataclass(frozen=True)`
+- **Config-driven design:** All parameters externalized to JSON configs with Pydantic validation
 
 ### Configuration-driven design
 
-<!-- List config file locations and precedence rules. -->
+| File | Purpose |
+|---|---|
+| `config/system.json` | Global settings (instruments, intervals, API config, log level) |
+| `config/risk.json` | Risk parameters (position limits, Kelly fraction, stops, drawdown) |
+| `config/instruments/EUR_USD.json` | EUR/USD instrument definition (Oanda, forex, pip-based) |
+| `config/instruments/BTC_USD.json` | BTC/USD instrument definition (Binance, crypto, %-based) |
+| `config/strategies/*.json` | Per-instrument strategy configurations |
+| `config/feature_providers.json` | Indicator/feature provider definitions |
+| `config/classifications/*.json` | Event classification rules per instrument |
 
-### API structure (if applicable)
+Precedence: per-instrument `risk_overrides` > `config/risk.json` defaults.
 
-<!-- Describe API conventions, endpoint structure, auth patterns. -->
+### API structure
+
+- Prefix: `/api/v1/`
+- Docs: `/api/docs` (Swagger), `/api/redoc` (ReDoc)
+- OpenAPI schema: `/api/v1/openapi.json`
+- Implemented endpoints: `GET /health`, `GET /ohlcv/{instrument}`, `GET /features/metadata`, `GET /features/{instrument}`, `GET /signals/generators`, `GET /signals/{instrument}`
+- All responses include checksums and timestamps for client-side validation
+
+### Directory structure
+
+```
+src/
+  app.py                    # FastAPI entry point
+  data/                     # Data pipeline (fetchers, indicators, storage, verification)
+  analysis/                 # Signal generation (events, tokenizer, bayesian, ML, meta-learner)
+  trading/                  # Trading engine (signal routing, brokers, risk, execution)
+  backtest/                 # Backtesting engine (simulation, metrics, reports)
+  regime/                   # Regime detection
+  api/                      # REST API routes (v1/)
+tests/
+  unit/                     # Isolated unit tests (mocked dependencies)
+  integration/              # Tests with real DB/services
+  scenarios/                # End-to-end workflow scenarios
+config/                     # All configuration JSON files
+client/                     # Web UI (React + TypeScript + Tailwind)
+scripts/                    # Utility scripts (db_bootstrap, db_status, run_api)
+docs/                       # Developer, ops, and user documentation
+```
 
 ## Key Decisions
 
-<!-- CUSTOMIZE: Reference the most impactful entries from DECISIONS.md that affect daily development. -->
-
-- **DEC-001:** [decision summary]
+- **DEC-001:** `SPEC.md` is the canonical specification. Decision precedence: `DECISIONS.md` > `SPEC.md`.
+- **DEC-002:** Git workflow enforces stage branches with push on each task completion.
+- **DEC-003:** Python 3.11+ monolith with FastAPI. Single-developer system; modules separated by directory and interface.
+- **DEC-004:** TimescaleDB (PostgreSQL 16) for time-series storage. Hypertables on `ohlcv` and `features`.
+- **DEC-005:** Protocol-based abstractions over inheritance for testability and swappability.
+- **DEC-006:** TA-Lib as canonical indicator engine with pure Python fallback for environments without the C library.
+- **DEC-007:** Configuration-driven design with Pydantic v2 validation and cross-field constraints.
+- **DEC-008:** Dual-broker architecture: Oanda (EUR/USD forex spot) + Binance (BTC/USD crypto spot).
+- **DEC-009:** Staged scaffold pattern — empty module files retained to lock API naming across stages.
+- **DEC-010:** Immutable frozen dataclasses for all domain models.
+- **DEC-011:** Signal generator registry with fallback chains (primary → fallback → neutral fail-safe).
 
 ## Git Workflow
 
 - `main` branch: always deployable
-- Stage branches: `stage/{N}-{name}` (e.g., `stage/1-foundation`)
+- Stage branches: `stage/{N}-{name}` (e.g., `stage/1-remediation`)
 - Commit + push to stage branch on task completion; merge to `main` at stage completion only
 
 ## Versioning

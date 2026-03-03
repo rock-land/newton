@@ -28,7 +28,8 @@ class UrllibOandaHTTPClient:
         query = urlencode(params)
         url = f"{self._base_url}{path}?{query}"
         parsed = urlparse(url)
-        if parsed.scheme != "https" or parsed.netloc != "api-fxpractice.oanda.com":
+        expected_netloc = urlparse(self._base_url).netloc
+        if parsed.scheme != "https" or parsed.netloc != expected_netloc:
             msg = f"unexpected oanda URL: {url}"
             raise ValueError(msg)
         req = Request(

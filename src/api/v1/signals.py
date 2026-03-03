@@ -14,6 +14,12 @@ router = APIRouter(tags=["signals"])
 _signal_router: SignalRouter = build_default_router()
 
 
+_SCAFFOLD_WARNING = (
+    "This endpoint returns scaffold data with hardcoded features. "
+    "Real signal generation requires Stage 2+ implementation."
+)
+
+
 @router.get("/signals/generators")
 def list_signal_generators() -> dict[str, Any]:
     generator_ids = _signal_router.registry.list_generators()
@@ -21,7 +27,7 @@ def list_signal_generators() -> dict[str, Any]:
     for generator_id in generator_ids:
         cfg = _signal_router.generators[generator_id]
         payload.append({"id": generator_id, "enabled": cfg.enabled, "parameters": cfg.parameters})
-    return {"count": len(payload), "generators": payload}
+    return {"scaffold": True, "count": len(payload), "generators": payload}
 
 
 @router.get("/signals/{instrument}")
@@ -45,6 +51,8 @@ def get_current_signal(
         generator_override=generator,
     )
     return {
+        "scaffold": True,
+        "warning": _SCAFFOLD_WARNING,
         "instrument": signal.instrument,
         "action": signal.action,
         "probability": signal.probability,
