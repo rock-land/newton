@@ -1,3 +1,30 @@
 {
-  "tokens": []
+  "tokens": [
+    {"token": "BTCUSD_RSI14_CL_BLW_20", "feature_key": "rsi:period=14", "condition": "below", "threshold": 20},
+    {"token": "BTCUSD_RSI14_CL_BLW_30", "feature_key": "rsi:period=14", "condition": "below", "threshold": 30},
+    {"token": "BTCUSD_RSI14_CL_ABV_70", "feature_key": "rsi:period=14", "condition": "above", "threshold": 70},
+    {"token": "BTCUSD_RSI14_CL_ABV_80", "feature_key": "rsi:period=14", "condition": "above", "threshold": 80},
+    {"token": "BTCUSD_RSI14_CL_XABV_30", "feature_key": "rsi:period=14", "condition": "cross_above_val", "threshold": 30},
+    {"token": "BTCUSD_RSI14_CL_XBLW_30", "feature_key": "rsi:period=14", "condition": "cross_below_val", "threshold": 30},
+    {"token": "BTCUSD_RSI14_CL_XABV_70", "feature_key": "rsi:period=14", "condition": "cross_above_val", "threshold": 70},
+    {"token": "BTCUSD_RSI14_CL_XBLW_70", "feature_key": "rsi:period=14", "condition": "cross_below_val", "threshold": 70},
+
+    {"token": "BTCUSD_MACD12269_CL_ABV_0", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "above", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_CL_BLW_0", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "below", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_HIST_ABV_0", "feature_key": "macd:fast=12,slow=26,signal=9:histogram", "condition": "above", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_HIST_BLW_0", "feature_key": "macd:fast=12,slow=26,signal=9:histogram", "condition": "below", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_CL_XABV_0", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "cross_above_val", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_CL_XBLW_0", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "cross_below_val", "threshold": 0},
+    {"token": "BTCUSD_MACD12269_CL_XABV_SIG", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "cross_above", "reference_key": "macd:fast=12,slow=26,signal=9:signal"},
+    {"token": "BTCUSD_MACD12269_CL_XBLW_SIG", "feature_key": "macd:fast=12,slow=26,signal=9:line", "condition": "cross_below", "reference_key": "macd:fast=12,slow=26,signal=9:signal"},
+
+    {"token": "BTCUSD_BB2020_CL_ABV_UPR", "feature_key": "_close", "condition": "above_ref", "reference_key": "bb:period=20,std=2.0:upper"},
+    {"token": "BTCUSD_BB2020_CL_BLW_LWR", "feature_key": "_close", "condition": "below_ref", "reference_key": "bb:period=20,std=2.0:lower"},
+
+    {"token": "BTCUSD_OBV_CL_RISING", "feature_key": "obv:", "condition": "rising"},
+    {"token": "BTCUSD_OBV_CL_FALLING", "feature_key": "obv:", "condition": "falling"},
+
+    {"token": "BTCUSD_ATR14_USD_ABV_1000", "feature_key": "atr:period=14", "condition": "above", "threshold": 1000},
+    {"token": "BTCUSD_ATR14_USD_BLW_500", "feature_key": "atr:period=14", "condition": "below", "threshold": 500}
+  ]
 }

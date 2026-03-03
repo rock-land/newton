@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-03 10:45 | Stage 2 / T-203 | /ship T-203 | Shipped tokenizer and classification vocabulary — v0.2.3 |
+| 2026-03-03 10:30 | Stage 2 / T-203 | /task T-203 | Tokenizer and classification vocabulary — indicator-to-token mapping |
 | 2026-03-03 10:15 | Stage 2 / T-202 | /ship T-202 | Shipped event detection and labeling system — v0.2.2 |
 | 2026-03-03 10:00 | Stage 2 / T-202 | /task T-202 | Event detection and labeling system — binary event labeling from OHLCV candles |
 | 2026-03-03 09:30 | Stage 2 / T-201 | /ship T-201 | Shipped signal-layer fixes — v0.2.1 |
