@@ -77,3 +77,17 @@ Format: checkbox | test description | notes
 | [ ] | `generate_batch()` with thresholds in `config.parameters` uses those thresholds for action computation | |
 | [ ] | `generate_batch()` without thresholds in `config.parameters` uses default thresholds (backward compatible) | |
 | [ ] | `DECISIONS.md` contains DEC-014 documenting event labeling high-watermark approach | |
+
+## Stage 3: ML Pipeline
+
+### T-301: Feature Engineering Pipeline
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `build_feature_matrix()` produces a matrix with OHLCV return columns (`ohlcv:*:lag=N`), indicator columns (`ind:*:lag=N`), and token flag columns (`tok:*`) | |
+| [ ] | OHLCV returns use period-over-period returns (not raw prices) — verified against hand-calculated values | |
+| [ ] | Lookback window is configurable and defaults to 24 (from strategy `ml_model.lookback_periods`) | |
+| [ ] | Token presence flags are binary (0.0 or 1.0) and reflect current-period token activation | |
+| [ ] | `build_feature_vector()` for a given timestamp produces the same values as the corresponding row in `build_feature_matrix()` | |
+| [ ] | Insufficient history for lookback window produces empty matrix (training) or raises ValueError (inference) | |
+| [ ] | Zero-volume candles handled safely (no division-by-zero errors) | |

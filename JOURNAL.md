@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 12:00 | Stage 3 / T-301 | /ship T-301 | Shipped feature engineering pipeline — v0.3.1 |
+| 2026-03-04 11:30 | Stage 3 / T-301 | /task T-301 | Feature engineering pipeline — OHLCV returns, indicator features, token flags |
 | 2026-03-04 11:00 | Stage 3 / — | /stage-init | Initialized Stage 3: ML Pipeline with 6 tasks |
 | 2026-03-04 10:45 | Stage 2 / T-2G | /ship T-2G | Shipped Stage 2 gate — v0.2.8, merged to main |
 | 2026-03-04 10:30 | Stage 2 / T-2G | /task T-2G | Stage gate validation — all criteria pass, quality gate PASS (225 tests, 89% coverage) |
