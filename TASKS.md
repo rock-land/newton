@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.2.0` (Stage 2, Task 0)
-**Latest Release:** `0.1.5` (Stage 1 complete)
+**Current Version:** `0.2.8` (Stage 2 complete)
+**Latest Release:** `0.2.8` (Stage 2 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -13,6 +13,7 @@ Status: Active
 | 0.1.0 | 1 | Stage 1 start |
 | 0.1.5 | 1 | Stage 1 complete |
 | 0.2.0 | 2 | Stage 2 start |
+| 0.2.8 | 2 | Stage 2 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -91,7 +92,7 @@ The following work was completed before governance was established. This is not 
 | T-205 | Bayesian inference engine | server | `src/analysis/bayesian.py` implemented; training computes prior P(Event) and likelihoods P(Token\|Event) with Laplace smoothing (configurable alpha); prediction uses log-odds form (numerically stable); isotonic calibration on out-of-fold predictions; posterior cap (configurable, default 0.90); phi correlation check with warning if \|phi\| > 0.7; frozen `BayesianModel` dataclass for trained params; tests verify posterior math, calibration, capping, and correlation alerts | DONE |
 | T-206 | BayesianV1Generator integration and data-layer fixes | server | `BayesianV1Generator` in `signal.py` rewritten to use Bayesian engine; inference path: FeatureSnapshot → tokenize → predict → Signal; DEC-013 recorded for FeatureProvider sync batch signature decision (SR-H5); `feature_providers.json` class path fixed (SR-H6); data-layer edge case tests added (SR-TG4: empty candle list, zero-volume candles); end-to-end integration test with synthetic data passes | DONE |
 | T-206-FIX1 | Fix default close fallback and action threshold inconsistencies in signal generators | server | `BayesianV1Generator.generate()` raises `RecoverableSignalError` when `_close` missing from features (model+rules present); generator override in `route_signal` preserves instrument-specific thresholds; `generate_batch()` signals use instrument-appropriate thresholds; DEC-014 recorded for event labeling high-watermark approach; quality gate passes | DONE |
-| T-2G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-2xx tasks DONE | TODO |
+| T-2G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-2xx tasks DONE | DONE |
 
 ---
 

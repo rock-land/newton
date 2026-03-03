@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 10:45 | Stage 2 / T-2G | /ship T-2G | Shipped Stage 2 gate — v0.2.8, merged to main |
+| 2026-03-04 10:30 | Stage 2 / T-2G | /task T-2G | Stage gate validation — all criteria pass, quality gate PASS (225 tests, 89% coverage) |
 | 2026-03-04 10:15 | Stage 2 / T-206-FIX1 | /ship T-206-FIX1 | Shipped fix for close fallback and threshold inconsistencies — v0.2.7 |
 | 2026-03-04 10:00 | Stage 2 / FIX tasks | /verify-fixes | Verified 1 fix task (T-206-FIX1): PASS — all 3 findings resolved, no regressions |
 | 2026-03-04 09:30 | Stage 2 / T-206-FIX1 | /task T-206-FIX1 | Fix default close fallback, generator override thresholds, and batch thresholds — record DEC-014 |

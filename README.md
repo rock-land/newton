@@ -14,7 +14,7 @@ Newton is a multi-stage trading system built with:
 - **Client** (Stage 6): Web UI for monitoring and control
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 1 complete (v0.1.5)** — Remediation & Hardening. Stage 2 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 2 complete (v0.2.8)** — Event Detection & Tokenization. Stage 3 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -127,6 +127,7 @@ Configuration files in `config/` directory:
 | `instruments/*.json` | Instrument definitions |
 | `strategies/*.json` | Strategy configurations |
 | `feature_providers.json` | Indicator definitions |
+| `classifications/*.json` | Token classification rules per instrument |
 
 Environment variables (see `.env.example`):
 
@@ -187,9 +188,9 @@ git checkout -b stage/{N}-{name}
 
 Newton uses `0.{STAGE}.{TASK}` versioning:
 
-- `0.1.10` = Stage 1, task 10 (Stage 1 complete)
-- `0.2.1` = Stage 2, task 1
-- Fix releases: `0.1.2-fix1` = Stage 1, task 2, fix 1
+- `0.1.5` = Stage 1 complete
+- `0.2.8` = Stage 2 complete
+- Fix releases: `0.2.7` = Stage 2, fix task shipped
 
 See [CHANGELOG](./CHANGELOG.md) for release history.
 
