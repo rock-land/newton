@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 14:00 | Stage 5 / T-505 | /ship T-505 | Shipped circuit breaker system — v0.5.5 |
+| 2026-03-05 13:00 | Stage 5 / T-505 | /task T-505 | Circuit breaker system in circuit_breaker.py — 5 breakers, per-instrument + portfolio scope, auto/manual reset |
 | 2026-03-04 12:00 | Stage 5 / T-504 | /ship T-504 | Shipped risk management engine — v0.5.4 |
 | 2026-03-04 11:30 | Stage 5 / T-504 | /task T-504 | Risk management engine in risk.py — config loading, pre-trade checks, Kelly sizing, in-trade controls |
 | 2026-03-04 11:00 | Stage 5 / T-503 | /ship T-503 | Shipped BinanceSpotAdapter — v0.5.3 |
