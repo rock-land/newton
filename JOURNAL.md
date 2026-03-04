@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 23:30 | Stage 4 / T-402 | /ship T-402 | Shipped UAT test API endpoints — v0.4.2 |
+| 2026-03-04 23:00 | Stage 4 / T-402 | /task T-402 | UAT test API endpoints — behavioral test suites with synthetic data, server-side runner |
 | 2026-03-04 22:30 | Stage 4 / T-401 | /ship T-401 | Shipped React + Vite + Tailwind + shadcn/ui foundation — v0.4.1 |
 | 2026-03-04 22:00 | Stage 4 / T-401 | /task T-401 | React + Vite + Tailwind + shadcn/ui foundation — client setup with sidebar nav, API layer, health panel |
 | 2026-03-04 21:30 | Stage 4 / — | /stage-init | Initialized Stage 4: UAT & Admin UI with 5 tasks + gate; DEC-015 recorded (React + shadcn/ui + Tailwind) |

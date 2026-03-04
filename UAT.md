@@ -242,3 +242,26 @@ Format: checkbox | test description | notes
 | [ ] | With API server running, Health page shows live data from `/api/v1/health` | |
 | [ ] | Dark mode renders correctly — dark background, light text, no contrast issues | |
 | [ ] | Vite proxy forwards `/api` requests to `localhost:8000` (no CORS errors) | |
+
+### T-402: UAT Test API Endpoints
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | `GET /api/v1/uat/suites` returns 200 with 7 suites | |
+| [ ] | Each suite has `id`, `name`, and `test_count` fields | |
+| [ ] | Total test count across all suites is 28 | |
+| [ ] | `POST /api/v1/uat/run` with `{"suite": "data_pipeline"}` runs 4 tests | |
+| [ ] | `POST /api/v1/uat/run` with `{"test_id": "DP-01"}` runs 1 test | |
+| [ ] | `POST /api/v1/uat/run` with `{}` runs all 28 tests | |
+| [ ] | All 28 tests pass (summary.passed == 28, summary.failed == 0) | |
+| [ ] | Each result has `id`, `name`, `suite`, `status`, `duration_ms`, `details`, `error` | |
+| [ ] | Response includes `summary` with `total`, `passed`, `failed`, `duration_ms` | |
+| [ ] | Unknown suite returns 404 | |
+| [ ] | Unknown test_id returns 404 | |
+| [ ] | Data Pipeline suite tests: candle normalization, OHLC integrity, dedup, indicators | |
+| [ ] | Event Detection suite tests: event labels, flat prices, tokenizer, MI selection | |
+| [ ] | Bayesian suite tests: training, posterior clamping, calibration, phi correlation | |
+| [ ] | ML Training suite tests: feature matrix, walk-forward, model store, XGBoost | |
+| [ ] | Regime suite tests: classification, confidence bands, non-positive prices, ADX | |
+| [ ] | Ensemble suite tests: meta-learner, prediction, calibration, ensemble signal | |
+| [ ] | End-to-End suite tests: fail-safe, fallback chain, multi-instrument, registry | |
