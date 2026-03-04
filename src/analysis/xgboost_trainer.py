@@ -10,6 +10,7 @@ stopping.  AUC-ROC > 0.55 per instrument (log warning if below).
 
 from __future__ import annotations
 
+import functools
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -53,7 +54,7 @@ class TrainingResult:
     """Aggregated output from walk-forward XGBoost training."""
 
     walk_forward_result: WalkForwardResult
-    production_model_bytes: bytes
+    production_model_bytes: bytes | None
     production_hyperparameters: XGBoostHyperparameters
     below_auc_threshold: bool
     instrument: str
@@ -138,24 +139,27 @@ def train_xgboost(
     if below:
         logger.warning(
             "XGBoost AUC-ROC %.4f below threshold %.2f for %s. "
-            "Consider CNN-LSTM alternative per SPEC §5.6.",
+            "ML component disabled per SPEC §5.6. Falling back to Bayesian-only.",
             wf_result.mean_auc_roc,
             auc_threshold,
             feature_matrix.instrument,
         )
 
+    # SPEC §5.6: disable ML component when AUC below threshold
+    final_model_bytes: bytes | None = None if below else production_bytes
+
     logger.info(
         "XGBoost training complete for %s: mean AUC=%.4f, %d folds, "
-        "production model %d bytes",
+        "production model %s",
         feature_matrix.instrument,
         wf_result.mean_auc_roc,
         len(folds),
-        len(production_bytes),
+        f"{len(production_bytes)} bytes" if not below else "DISABLED (below threshold)",
     )
 
     return TrainingResult(
         walk_forward_result=wf_result,
-        production_model_bytes=production_bytes,
+        production_model_bytes=final_model_bytes,
         production_hyperparameters=hyperparameters,
         below_auc_threshold=below,
         instrument=feature_matrix.instrument,
@@ -176,10 +180,18 @@ def predict_xgboost(
     Returns:
         Probability in [0, 1].
     """
-    booster = _deserialize_model(model_bytes)
+    # Ensure bytes (not bytearray) for lru_cache hashability
+    key = bytes(model_bytes) if not isinstance(model_bytes, bytes) else model_bytes
+    booster = _get_booster(key)
     dmatrix = xgb.DMatrix(feature_vector.reshape(1, -1))
     predictions = booster.predict(dmatrix)
     return float(predictions[0])
+
+
+@functools.lru_cache(maxsize=8)
+def _get_booster(model_bytes: bytes) -> xgb.Booster:
+    """Cache deserialized XGBoost boosters to avoid per-call overhead."""
+    return _deserialize_model(model_bytes)
 
 
 # ---------------------------------------------------------------------------

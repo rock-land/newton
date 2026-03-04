@@ -532,3 +532,60 @@ class TestEnsembleMetaLearner:
         high_signal = gen.generate("EUR_USD", high_features, cfg)
         low_signal = gen.generate("EUR_USD", low_features, cfg)
         assert high_signal.probability > low_signal.probability
+
+
+# ---------------------------------------------------------------------------
+# validate_config (T-306-FIX2)
+# ---------------------------------------------------------------------------
+
+
+class TestValidateConfig:
+    """Generator validate_config methods check required parameters."""
+
+    def test_mlv1_validate_config_accepts_valid(self) -> None:
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({"model_bytes": b"data", "feature_names": ("f0",)}) is True
+
+    def test_mlv1_validate_config_accepts_scaffold(self) -> None:
+        """Scaffold mode (no model) is valid."""
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({}) is True
+
+    def test_mlv1_validate_config_rejects_partial(self) -> None:
+        """model_bytes without feature_names is invalid."""
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({"model_bytes": b"data"}) is False
+
+    def test_ensemble_validate_config_accepts_meta_learner(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        # meta_learner_model present → valid
+        assert gen.validate_config({"meta_learner_model": "dummy", "weights": [0.6, 0.4]}) is True
+
+    def test_ensemble_validate_config_accepts_weighted_blend(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        assert gen.validate_config({"weights": [0.6, 0.4]}) is True
+
+    def test_ensemble_validate_config_rejects_bad_weights(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        # weights must be list of 2
+        assert gen.validate_config({"weights": [0.5]}) is False
+
+    def test_bayesian_validate_config_accepts_anything(self) -> None:
+        """BayesianV1 has optional model/rules — all dict configs are valid."""
+        from src.trading.signal import BayesianV1Generator
+
+        gen = BayesianV1Generator()
+        assert gen.validate_config({}) is True
+        assert gen.validate_config({"model": "x", "rules": []}) is True

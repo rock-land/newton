@@ -288,19 +288,91 @@ class TestBuildFeatureMatrix:
         # Should still have OHLCV + indicator features
         assert matrix.values.shape[1] > 0
 
-    def test_values_not_nan(self) -> None:
-        """All values in matrix should be finite (no NaN/Inf)."""
+    def test_values_finite_when_sufficient_history(self) -> None:
+        """Values should be finite when lookback window has full return data.
+
+        The first candle has no returns (no predecessor), so rows whose
+        farthest lag reaches candle[0] will have NaN for OHLCV returns.
+        With lookback=3 and 30 candles, rows from index 4+ (lag 3 → candle 1+)
+        have full data. Use lookback+2 offset to ensure complete coverage.
+        """
         candles = _make_candle_series(30)
         indicator_features = _make_indicator_features(candles)
+        token_sets = _make_token_sets(candles)
+        lookback = 3
+        matrix = build_feature_matrix(
+            candles=candles,
+            indicator_features=indicator_features,
+            token_sets=token_sets,
+            lookback_periods=lookback,
+            selected_tokens=SELECTED_TOKENS,
+        )
+        # Skip the first row whose farthest lag reaches candle[0] (no returns)
+        if matrix.values.shape[0] > 1:
+            assert np.all(np.isfinite(matrix.values[1:]))
+
+    def test_missing_indicator_produces_nan(self) -> None:
+        """Missing indicator values should produce NaN (not 0.0) for XGBoost."""
+        candles = _make_candle_series(10)
+        # Only provide indicators for first 5 candles, leave rest empty
+        indicator_features: dict[datetime, dict[str, float]] = {}
+        for i, c in enumerate(candles[:5]):
+            indicator_features[c.time] = {"rsi:period=14": 50.0 + i}
+        # candles[5:] have no indicators — those lags should get NaN
         token_sets = _make_token_sets(candles)
         matrix = build_feature_matrix(
             candles=candles,
             indicator_features=indicator_features,
             token_sets=token_sets,
-            lookback_periods=3,
+            lookback_periods=2,
             selected_tokens=SELECTED_TOKENS,
         )
-        assert np.all(np.isfinite(matrix.values))
+        # Find indicator columns
+        ind_cols = [i for i, n in enumerate(matrix.feature_names) if n.startswith("ind:")]
+        assert len(ind_cols) > 0
+        # Rows that reference timestamps without indicators should have NaN
+        has_nan = np.any(np.isnan(matrix.values[:, ind_cols]))
+        assert has_nan, "Missing indicator values should produce NaN, not 0.0"
+
+    def test_missing_ohlcv_return_produces_nan(self) -> None:
+        """Missing OHLCV return data should produce NaN (not 0.0)."""
+        from src.analysis.feature_engineering import _extract_row
+
+        # target_time at index 2, lookback=2 means we need times[0] and times[1]
+        t0 = datetime(2024, 1, 1, tzinfo=UTC)
+        t1 = datetime(2024, 1, 1, 1, tzinfo=UTC)
+        t2 = datetime(2024, 1, 1, 2, tzinfo=UTC)
+        sorted_times = [t0, t1, t2]
+        time_index = {t: i for i, t in enumerate(sorted_times)}
+
+        # Only provide returns for t1, NOT t0
+        ohlcv_returns = {t1: {"open_ret": 0.01, "high_ret": 0.02, "low_ret": -0.01, "close_ret": 0.005, "volume_ret": 0.1}}
+        indicator_features: dict[datetime, dict[str, float]] = {}
+
+        row = _extract_row(
+            target_time=t2,
+            ohlcv_returns=ohlcv_returns,
+            indicator_features=indicator_features,
+            token_set=frozenset(),
+            lookback_periods=2,
+            sorted_times=sorted_times,
+            time_index=time_index,
+            indicator_keys=(),
+            selected_tokens=(),
+        )
+        assert row is not None
+        # lag=1 → t1 (has data), lag=2 → t0 (missing data, should be NaN)
+        import math
+        # lag=2 is first 5 values in row (OHLCV returns for t0)
+        for val in row[5:10]:  # lag=2 OHLCV values should be from t0 = missing
+            pass
+        # Actually lag ordering: lag=1 is first, then lag=2
+        # lag=1 → t1 (idx 2-1=1), has data → finite
+        # lag=2 → t0 (idx 2-2=0), missing → NaN
+        for val in row[0:5]:  # lag=1 = t1, should be finite
+            assert math.isfinite(val), f"lag=1 value should be finite, got {val}"
+        for val in row[5:10]:  # lag=2 = t0, should be NaN
+            assert math.isnan(val), f"lag=2 value should be NaN for missing data, got {val}"
 
 
 # --- build_feature_vector ---

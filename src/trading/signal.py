@@ -69,6 +69,7 @@ class _BaseGenerator:
         return self.generator_version
 
     def validate_config(self, config: dict[str, Any]) -> bool:
+        """Subclasses should override for parameter-specific validation."""
         return isinstance(config, dict)
 
 
@@ -156,6 +157,16 @@ class MLV1Generator(_BaseGenerator):
 
     generator_id = "ml_v1"
 
+    def validate_config(self, config: dict[str, Any]) -> bool:
+        if not isinstance(config, dict):
+            return False
+        has_model = "model_bytes" in config
+        has_names = "feature_names" in config
+        # Both or neither — partial config is invalid
+        if has_model != has_names:
+            return False
+        return True
+
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:
             raise RecoverableSignalError("generator disabled")
@@ -228,6 +239,15 @@ class EnsembleV1Generator(_BaseGenerator):
     """
 
     generator_id = "ensemble_v1"
+
+    def validate_config(self, config: dict[str, Any]) -> bool:
+        if not isinstance(config, dict):
+            return False
+        weights = config.get("weights")
+        if weights is not None:
+            if not isinstance(weights, list) or len(weights) != 2:
+                return False
+        return True
 
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:

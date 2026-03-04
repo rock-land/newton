@@ -104,6 +104,7 @@ class TestTrainXGBoost:
         )
         assert isinstance(result, TrainingResult)
         assert result.instrument == "EUR_USD"
+        assert result.production_model_bytes is not None
         assert len(result.production_model_bytes) > 0
         assert isinstance(result.production_hyperparameters, XGBoostHyperparameters)
 
@@ -132,7 +133,8 @@ class TestTrainXGBoost:
         )
         assert result.walk_forward_result.mean_auc_roc > 0.0
 
-    def test_below_auc_threshold_true(self) -> None:
+    def test_below_auc_threshold_true_returns_none_model(self) -> None:
+        """SPEC §5.6: below AUC threshold → disable ML (production_model_bytes=None)."""
         fm, labels = _make_synthetic_data()
         result = train_xgboost(
             feature_matrix=fm,
@@ -143,6 +145,7 @@ class TestTrainXGBoost:
             auc_threshold=0.99,
         )
         assert result.below_auc_threshold is True
+        assert result.production_model_bytes is None
 
     def test_below_auc_threshold_false(self) -> None:
         fm, labels = _make_synthetic_data()
@@ -155,6 +158,8 @@ class TestTrainXGBoost:
             auc_threshold=0.0,
         )
         assert result.below_auc_threshold is False
+        assert result.production_model_bytes is not None
+        assert len(result.production_model_bytes) > 0
 
     def test_production_model_predicts(self) -> None:
         fm, labels = _make_synthetic_data()
@@ -165,6 +170,7 @@ class TestTrainXGBoost:
             n_optuna_trials=2,
             early_stopping_rounds=5,
         )
+        assert result.production_model_bytes is not None
         prob = predict_xgboost(
             model_bytes=result.production_model_bytes,
             feature_vector=fm.values[0],
@@ -268,6 +274,28 @@ class TestPredictXGBoost:
         )
         assert p_high != p_low
         assert p_high > p_low
+
+    def test_cached_deserialization(self) -> None:
+        """Second call with same model bytes should use cached booster."""
+        import xgboost as xgb
+        from src.analysis.xgboost_trainer import _get_booster
+
+        X = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]])
+        y = np.array([0, 0, 1, 1])
+        dtrain = xgb.DMatrix(X, label=y)
+        booster = xgb.train(
+            {"objective": "binary:logistic", "verbosity": 0},
+            dtrain, num_boost_round=10,
+        )
+        model_bytes = bytes(booster.save_raw(raw_format="ubj"))
+
+        # Clear cache
+        _get_booster.cache_clear()
+        b1 = _get_booster(model_bytes)
+        b2 = _get_booster(model_bytes)
+        assert b1 is b2  # Same object (cached)
+        info = _get_booster.cache_info()
+        assert info.hits >= 1
 
 
 # ---------------------------------------------------------------------------

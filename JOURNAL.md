@@ -5,6 +5,11 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 19:30 | Stage 3 / FIX tasks | /ship T-306-FIX1 | Shipped fix batch (T-306-FIX1/FIX2/FIX3) — v0.3.9 |
+| 2026-03-04 19:00 | Stage 3 / FIX tasks | /task | Fix task batch: T-306-FIX1 + T-306-FIX2 + T-306-FIX3 — guard non-positive prices, NaN defaults, AUC enforcement, validate_config, held-out calibration, XGBoost caching, path sanitization |
+| 2026-03-04 18:30 | Stage 3 / — | /stage-report | Compiled stage report: NOT READY — 3 FIX tasks added (T-306-FIX1, T-306-FIX2, T-306-FIX3) |
+| 2026-03-04 18:00 | Stage 3 / — | /red-review | Red team review completed: Conditional Pass (2 critical, 5 high) |
+| 2026-03-04 17:30 | Stage 3 / — | /review | Code review completed: Ready for merge |
 | 2026-03-04 17:00 | Stage 3 / T-306 | /ship T-306 | Shipped meta-learner and EnsembleV1Generator rewrite — v0.3.6 |
 | 2026-03-04 16:30 | Stage 3 / T-306 | /task T-306 | Meta-learner and EnsembleV1Generator rewrite — logistic regression stacking, calibration, ensemble integration |
 | 2026-03-04 16:00 | Stage 3 / T-305 | /ship T-305 | Shipped regime detection subsystem — v0.3.5 |

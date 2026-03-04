@@ -199,3 +199,22 @@ Format: checkbox | test description | notes
 | [ ] | `EnsembleV1Generator.generate_batch()` with meta-learner model returns all signals with `source: "meta_learner"` | |
 | [ ] | `EnsembleV1Generator` with meta-learner but missing `regime_confidence` feature raises `RecoverableSignalError` | |
 | [ ] | End-to-end: train meta-learner → predict → EnsembleV1Generator produces valid signal with calibrated probability | |
+
+### T-306-FIX1/FIX2/FIX3: Remediation Fixes
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `compute_vol_30d()` with zero price in closes raises `ValueError` (non-positive guard) | |
+| [ ] | `compute_vol_30d()` with negative price in closes raises `ValueError` | |
+| [ ] | Missing indicator values in feature matrix produce `NaN` (not `0.0`) — XGBoost handles natively | |
+| [ ] | Missing OHLCV return values in feature vector produce `NaN` (not `0.0`) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.99` returns `production_model_bytes=None` (ML disabled per SPEC §5.6) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.0` returns `production_model_bytes` with data (ML enabled) | |
+| [ ] | `MLV1Generator.validate_config()` returns `True` for valid config (both `model_bytes` and `feature_names`) | |
+| [ ] | `MLV1Generator.validate_config()` returns `False` for partial config (`model_bytes` without `feature_names`) | |
+| [ ] | `EnsembleV1Generator.validate_config()` returns `False` for invalid weights (single-element list) | |
+| [ ] | `train_meta_learner()` `n_training_samples` is 80% of input (train/held-out split for calibration) | |
+| [ ] | `predict_xgboost()` caches deserialized booster — second call with same bytes reuses object | |
+| [ ] | `model_store` rejects path traversal in instrument name (`../etc` raises `ValueError`) | |
+| [ ] | `model_store` rejects path traversal in model_type (`../../passwd` raises `ValueError`) | |
+| [ ] | `model_store` rejects slash in instrument name (`foo/bar` raises `ValueError`) | |

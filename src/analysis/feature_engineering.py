@@ -124,19 +124,21 @@ def _extract_row(
 
     row: list[float] = []
 
+    _NAN = float("nan")
+
     # OHLCV returns: lag 1 = most recent prior, lag N = oldest
     for lag in range(1, lookback_periods + 1):
         t = sorted_times[idx - lag]
         ret = ohlcv_returns.get(t, {})
         for field in _OHLCV_RETURN_FIELDS:
-            row.append(ret.get(field, 0.0))
+            row.append(ret.get(field, _NAN))
 
     # Indicator features: same lag convention
     for lag in range(1, lookback_periods + 1):
         t = sorted_times[idx - lag]
         ind = indicator_features.get(t, {})
         for key in indicator_keys:
-            row.append(ind.get(key, 0.0))
+            row.append(ind.get(key, _NAN))
 
     # Token flags (current period)
     for token in selected_tokens:

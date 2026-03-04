@@ -68,7 +68,8 @@ class TestTrainMetaLearner:
         )
         assert isinstance(model, MetaLearnerModel)
         assert len(model.coefficients) == 3
-        assert model.n_training_samples == 300
+        # n_training_samples is 80% of input (train/held-out split)
+        assert model.n_training_samples == 240  # 80% of 300
         assert len(model.calibration_errors) == 10
 
     def test_coefficients_reflect_informative_inputs(self) -> None:
@@ -119,7 +120,22 @@ class TestTrainMetaLearner:
             labels=tuple(labels),
             min_samples=100,
         )
-        assert model.n_training_samples == 100
+        # n_training_samples is 80% of input (train/held-out split)
+        assert model.n_training_samples == 80
+
+    def test_calibration_evaluated_on_held_out_data(self) -> None:
+        """Calibration errors should be evaluated on held-out data, not training."""
+        bayesian, ml, regime, labels = self._make_separable_data(n=500, seed=99)
+        model = train_meta_learner(
+            bayesian_posteriors=tuple(bayesian),
+            ml_probabilities=tuple(ml),
+            regime_confidences=tuple(regime),
+            labels=tuple(int(x) for x in labels),
+        )
+        # n_training_samples should be less than total input (80% split)
+        assert model.n_training_samples < 500
+        assert model.n_training_samples == 400  # 80% of 500
+        assert len(model.calibration_errors) == 10
 
 
 class TestPredictMetaLearner:

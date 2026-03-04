@@ -135,6 +135,18 @@ class TestComputeVol30d:
         with pytest.raises(ValueError, match="insufficient"):
             compute_vol_30d(closes=np.array([1.10]), annualization_factor=FOREX_ANNUALIZATION)
 
+    def test_zero_price_raises(self) -> None:
+        """Zero price in closes should raise ValueError (log(0) undefined)."""
+        closes = np.array([1.10, 1.12, 0.0, 1.11, 1.13])
+        with pytest.raises(ValueError, match="non-positive"):
+            compute_vol_30d(closes=closes, annualization_factor=FOREX_ANNUALIZATION)
+
+    def test_negative_price_raises(self) -> None:
+        """Negative price in closes should raise ValueError."""
+        closes = np.array([1.10, 1.12, -0.5, 1.11, 1.13])
+        with pytest.raises(ValueError, match="non-positive"):
+            compute_vol_30d(closes=closes, annualization_factor=FOREX_ANNUALIZATION)
+
     def test_annualization_constants(self) -> None:
         assert FOREX_ANNUALIZATION == pytest.approx(math.sqrt(252))
         assert CRYPTO_ANNUALIZATION == pytest.approx(math.sqrt(365))

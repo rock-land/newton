@@ -37,12 +37,25 @@ class ModelArtifact:
     artifact_hash: str
 
 
+_SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _validate_path_component(name: str, label: str) -> None:
+    """Validate that a path component is safe (no traversal)."""
+    if not _SAFE_NAME_RE.match(name):
+        raise ValueError(
+            f"Invalid {label}: {name!r} — must match [A-Za-z0-9_-]+"
+        )
+
+
 def _compute_hash(data: bytes) -> str:
     """Compute SHA-256 hex digest of raw bytes."""
     return hashlib.sha256(data).hexdigest()
 
 
 def _model_dir(base_dir: Path, instrument: str, model_type: str) -> Path:
+    _validate_path_component(instrument, "instrument")
+    _validate_path_component(model_type, "model_type")
     return base_dir / instrument / model_type
 
 

@@ -315,3 +315,50 @@ class TestListVersions:
         bay = list_versions(instrument="EUR_USD", model_type="bayesian", base_dir=tmp_path)
         assert len(xgb) == 1
         assert len(bay) == 1
+
+
+# --- Path sanitization (T-306-FIX3) ---
+
+
+class TestPathSanitization:
+    def test_valid_instrument_names(self, tmp_path: Path) -> None:
+        """Standard instrument names are accepted."""
+        for name in ("EUR_USD", "BTC_USD", "ETH-USDT", "SP500"):
+            artifact = _make_artifact(instrument=name, version=1)
+            # Should not raise
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_valid_model_types(self, tmp_path: Path) -> None:
+        for name in ("xgboost", "bayesian", "meta-learner"):
+            artifact = _make_artifact(model_type=name, version=1)
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_path_traversal_instrument_raises(self, tmp_path: Path) -> None:
+        """Path traversal in instrument should be rejected."""
+        artifact = _make_artifact(instrument="../etc", version=1)
+        with pytest.raises(ValueError, match="Invalid"):
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_path_traversal_model_type_raises(self, tmp_path: Path) -> None:
+        artifact = _make_artifact(model_type="../../passwd", version=1)
+        with pytest.raises(ValueError, match="Invalid"):
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_slash_in_name_raises(self, tmp_path: Path) -> None:
+        artifact = _make_artifact(instrument="foo/bar", version=1)
+        with pytest.raises(ValueError, match="Invalid"):
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_dot_dot_in_name_raises(self, tmp_path: Path) -> None:
+        artifact = _make_artifact(instrument="..", version=1)
+        with pytest.raises(ValueError, match="Invalid"):
+            save_model(model_bytes=b"data", artifact=artifact, base_dir=tmp_path)
+
+    def test_load_rejects_path_traversal(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid"):
+            load_model(
+                instrument="../etc",
+                model_type="xgboost",
+                version=1,
+                base_dir=tmp_path,
+            )

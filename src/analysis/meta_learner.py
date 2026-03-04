@@ -70,16 +70,22 @@ def train_meta_learner(
     X = np.column_stack([bayesian_posteriors, ml_probabilities, regime_confidences])
     y = np.array(labels, dtype=np.int32)
 
+    # Train/held-out split (80/20) — calibration evaluated on held-out data
+    split = int(n * 0.8)
+    X_train, X_held = X[:split], X[split:]
+    y_train, y_held = y[:split], y[split:]
+
     clf = LogisticRegression(solver="lbfgs", max_iter=1000)
-    clf.fit(X, y)
+    clf.fit(X_train, y_train)
 
     coefficients = tuple(float(c) for c in clf.coef_[0])
     intercept = float(clf.intercept_[0])
 
-    # Compute calibration on training data (OOF predictions)
-    predictions = tuple(float(p) for p in clf.predict_proba(X)[:, 1])
+    # Evaluate calibration on held-out data (not training data)
+    held_predictions = tuple(float(p) for p in clf.predict_proba(X_held)[:, 1])
+    held_labels = tuple(int(lb) for lb in y_held)
     calibration_errors = compute_calibration_error(
-        predictions=predictions, labels=labels,
+        predictions=held_predictions, labels=held_labels,
     )
 
     passes = check_calibration(calibration_errors)
@@ -91,9 +97,9 @@ def train_meta_learner(
         )
 
     logger.info(
-        "Meta-learner trained: %d samples, coefficients=%s, intercept=%.4f, "
-        "max calibration error=%.4f",
-        n, coefficients, intercept, max(calibration_errors),
+        "Meta-learner trained: %d samples (train=%d, held-out=%d), "
+        "coefficients=%s, intercept=%.4f, max calibration error=%.4f",
+        n, split, n - split, coefficients, intercept, max(calibration_errors),
     )
 
     return MetaLearnerModel(
@@ -101,7 +107,7 @@ def train_meta_learner(
         intercept=intercept,
         feature_names=_FEATURE_NAMES,
         calibration_errors=calibration_errors,
-        n_training_samples=n,
+        n_training_samples=split,
     )
 
 

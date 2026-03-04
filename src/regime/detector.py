@@ -111,6 +111,11 @@ def compute_vol_30d(
             f"compute_vol_30d: insufficient data ({len(closes)} closes, need ≥2)"
         )
 
+    if np.any(closes <= 0):
+        raise ValueError(
+            "compute_vol_30d: non-positive price detected in closes (log undefined)"
+        )
+
     # Use up to VOL_WINDOW+1 prices to get VOL_WINDOW returns
     window = closes[-(VOL_WINDOW + 1):]
     log_returns = np.diff(np.log(window))
