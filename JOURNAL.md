@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 03:00 | Stage 4 / T-405 | /ship T-405 | Shipped Refresh UAT.md with practical test plan — v0.4.5 |
+| 2026-03-05 02:30 | Stage 4 / T-405 | /task T-405 | Refresh UAT.md with practical test plan — human-verifiable items mapped to automated tests and interactive panels |
 | 2026-03-05 02:00 | Stage 4 / T-404 | /ship T-404 | Shipped Interactive admin panels — v0.4.4 |
 | 2026-03-05 01:00 | Stage 4 / T-404 | /task T-404 | Interactive admin panels — Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard |
 | 2026-03-05 00:30 | Stage 4 / T-403 | /ship T-403 | Shipped UAT Runner UI — v0.4.3 |
