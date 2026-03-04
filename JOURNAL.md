@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 09:00 | Stage 5 / T-501 | /ship T-501 | Shipped BrokerAdapter protocol and domain models — v0.5.1 |
+| 2026-03-04 08:30 | Stage 5 / T-501 | /task T-501 | Implement BrokerAdapter protocol and domain models in broker_base.py |
 | 2026-03-04 08:00 | Stage 5 / — | /stage-init | Initialized Stage 5: Trading Engine with 8 tasks + 1 gate |
 | 2026-03-05 07:00 | Stage 4 / T-4G | /ship T-4G | Shipped Stage 4 gate — v0.4.8, merged to main |
 | 2026-03-05 06:30 | Stage 4 / T-4G | /task T-4G | Stage gate validation — all criteria pass |
