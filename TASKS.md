@@ -1,6 +1,6 @@
 # Newton Development Tasks
 
-**Current Version:** `0.3.10` (Stage 3 complete)
+**Current Version:** `0.4.0` (Stage 4 start)
 **Latest Release:** `0.3.10` (Stage 3 complete)
 
 Status: Active
@@ -16,6 +16,7 @@ Status: Active
 | 0.2.8 | 2 | Stage 2 complete |
 | 0.3.0 | 3 | Stage 3 start |
 | 0.3.10 | 3 | Stage 3 complete |
+| 0.4.0 | 4 | Stage 4 start |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -117,6 +118,21 @@ The following work was completed before governance was established. This is not 
 
 ---
 
+## Stage 4: UAT & Admin UI
+
+**Branch:** `stage/4-uat-admin`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-401 | React + Vite + Tailwind + shadcn/ui foundation | client | React 18 + TypeScript + Vite configured in `client/`; Tailwind CSS v4 with dark mode; shadcn/ui initialized with base components (Button, Card, Table, Badge, Tabs, Sidebar); React Router with sidebar nav (Health, UAT Runner, Admin); API client layer with fetch wrapper; Vite dev server proxies `/api` to `localhost:8000`; existing health panel rebuilt as React component; `npm run dev` and `npm run build` work; DEC-015 recorded | TODO |
+| T-402 | UAT test API endpoints | server | `GET /api/v1/uat/suites` lists test suites with test counts; `POST /api/v1/uat/run` executes suite or individual test by ID; ~25-30 behavioral tests across 7 suites (Data Pipeline, Event Detection, Bayesian, ML Training, Regime, Ensemble, End-to-End); each result: `{id, name, suite, status, duration_ms, details, error?}`; tests use synthetic data (no DB required for most); registered in API router; server-side tests pass | TODO |
+| T-403 | UAT Runner UI | client | React page: suite cards with test counts, "Run All" / "Run Suite" buttons; results table with pass/fail badges, duration, expandable detail rows; summary bar (X/Y passed, total duration); re-run individual tests; loading states during execution; accessible from sidebar nav | TODO |
+| T-404 | Interactive admin panels | fullstack | 4 panels accessible from sidebar: (1) Feature Explorer — browse features per instrument/interval, table with indicator values; (2) Signal Inspector — trigger signal generation per instrument, show probability/action/component scores/metadata; (3) Regime Monitor — regime state per instrument with vol_30d/ADX/classification/confidence band; (4) Model Dashboard — list model artifacts, version history, AUC metrics, training metadata; all panels use dark mode; API endpoints added as needed | TODO |
+| T-405 | Refresh UAT.md with practical test plan | docs | Rewrite UAT.md with human-verifiable items; each item maps to automated test (suite:test_id) or interactive panel (page + what to look for); remove pure unit-test items covered by pytest; add verification instructions for each panel | TODO |
+| T-4G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; `cd client && npm run build` PASS; all T-4xx tasks DONE | TODO |
+
+---
+
 ## Backlog
 
 <!--
@@ -126,11 +142,11 @@ during /stage-init, NOT in advance. Keep entries lightweight.
 
 | Stage | Name | Summary |
 |-------|------|---------|
-| 4 | Trading Engine | Broker adapters, risk management, order execution, reconciliation, circuit breakers (SPEC §6) |
-| 5 | Backtesting | Walk-forward validation, purged K-fold CV, performance metrics, reporting (SPEC §9) |
-| 6 | Client Web UI | Health panel, data viewer, signal display, trade monitoring (SPEC §8) |
-| 7 | Paper Trading | Oanda practice account + Binance testnet integration, live data pipeline (SPEC §11) |
-| 8 | Live Trading | Production deployment, monitoring, kill switches, operational runbooks (SPEC §11) |
+| 5 | Trading Engine | Broker adapters, risk management, order execution, reconciliation, circuit breakers (SPEC §6) |
+| 6 | Backtesting | Walk-forward validation, purged K-fold CV, performance metrics, reporting (SPEC §9) |
+| 7 | Client Web UI | Signal display, data viewer with charting, trade monitoring — React foundation from Stage 4 (SPEC §8) |
+| 8 | Paper Trading | Oanda practice account + Binance testnet integration, live data pipeline (SPEC §11) |
+| 9 | Live Trading | Production deployment, monitoring, kill switches, operational runbooks (SPEC §11) |
 
 ---
 

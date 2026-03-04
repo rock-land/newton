@@ -109,3 +109,10 @@ Format:
 - **Context:** SPEC §4.6 defines events as `(close[T+N] - close[T]) / close[T] >= X/100` (close-to-close). The implementation checks whether `future.high` (UP) or `future.low` (DOWN) breaches the threshold at any point within the horizon window. The labeling method is strategy-dependent: high-watermark is more appropriate for active trading strategies (detecting intrabar opportunities), while close-to-close is better for hold-to-horizon strategies. Stage 2 Red Team finding RC-1.
 - **Consequences:** Event labels reflect whether the price level was reached at any point in the forward window, not just at the horizon endpoint. This produces more frequent positive labels than close-to-close. The labeling method should be made configurable per strategy in a future stage (e.g., `"event_method": "watermark" | "close_to_close"` in strategy config).
 - **Status:** Accepted
+
+## DEC-015
+- **Date:** 2026-03-04
+- **Decision:** Client UI stack: React 18 + TypeScript + Vite + Tailwind CSS (dark mode) + shadcn/ui (Radix UI primitives).
+- **Context:** Stage 4 introduces the client web UI foundation for UAT and admin. shadcn/ui was chosen over MUI, Ant Design, and Mantine because: (1) components are copied into the project (no dependency upgrade risk), (2) built on Tailwind CSS which is already specified in CLAUDE.md and SPEC §8, (3) minimal bundle impact (~5-15KB per component vs. 200-300KB for MUI/Ant), (4) excellent dark mode via CSS variables, (5) @tanstack/react-table integration for data-heavy dashboards.
+- **Consequences:** `client/` uses Vite as build tool, React 18 with TypeScript strict mode, Tailwind CSS v4 for styling, and shadcn/ui for component primitives. Components live in `client/src/components/ui/`. The original Stage 6 (Client Web UI) scope is reduced since the React foundation is established here in Stage 4.
+- **Status:** Accepted
