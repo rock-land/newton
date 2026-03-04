@@ -141,3 +141,30 @@ Format: checkbox | test description | notes
 | [ ] | `MLV1Generator.generate_batch()` with model returns signals with `source: "xgboost_engine"` for all snapshots | |
 | [ ] | `XGBoostHyperparameters` and `TrainingResult` dataclasses are frozen | |
 | [ ] | Training is reproducible with the same `random_seed` | |
+
+### T-305: Regime Detection Subsystem
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `RegimeLabel` enum has exactly 4 values: `LOW_VOL_TRENDING`, `LOW_VOL_RANGING`, `HIGH_VOL_TRENDING`, `HIGH_VOL_RANGING` | |
+| [ ] | `ConfidenceBand` enum has exactly 3 values: `HIGH`, `MEDIUM`, `LOW` | |
+| [ ] | `RegimeState` is frozen (attribute assignment raises `AttributeError`) | |
+| [ ] | `compute_vol_30d()` with constant prices returns 0.0 | |
+| [ ] | `compute_vol_30d()` with forex annualization (√252) produces lower vol than crypto (√365) for same returns | |
+| [ ] | `compute_vol_30d()` with fewer than 2 closes raises `ValueError` | |
+| [ ] | `compute_adx_14()` with strong trending data returns ADX > 25 | |
+| [ ] | `compute_adx_14()` with ranging/oscillating data returns ADX < 25 | |
+| [ ] | `compute_adx_14()` with fewer than 28 bars raises `ValueError` | |
+| [ ] | `compute_adx_14()` returns value in [0, 100] range | |
+| [ ] | `compute_vol_median()` returns correct median of input series | |
+| [ ] | `compute_vol_median()` with empty list raises `ValueError` | |
+| [ ] | `classify_regime()` returns `LOW_VOL_TRENDING` when vol_30d < vol_median AND ADX > 25 | |
+| [ ] | `classify_regime()` returns `HIGH_VOL_RANGING` when vol_30d ≥ vol_median AND ADX ≤ 25 | |
+| [ ] | `classify_regime()` boundary: vol_30d == vol_median classifies as HIGH_VOL (≥ condition) | |
+| [ ] | `classify_regime()` boundary: ADX == 25 classifies as RANGING (≤ condition) | |
+| [ ] | `compute_confidence()` matches SPEC §5.8.3 formula: `sqrt(clamp(d_vol) × clamp(d_adx))` | |
+| [ ] | `compute_confidence()` with vol_median=0 returns (0.0, LOW) — no division-by-zero crash | |
+| [ ] | Confidence ≥ 0.5 → HIGH band; 0.2–0.5 → MEDIUM band; < 0.2 → LOW band | |
+| [ ] | `detect_regime()` end-to-end with trending candle data returns `RegimeState` with ADX > 25 | |
+| [ ] | `detect_regime()` end-to-end with ranging candle data returns valid `RegimeState` | |
+| [ ] | Pure Python ADX fallback produces results in the same ballpark as TA-Lib ADX | |

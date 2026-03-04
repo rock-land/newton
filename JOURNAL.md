@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 16:00 | Stage 3 / T-305 | /ship T-305 | Shipped regime detection subsystem — v0.3.5 |
+| 2026-03-04 15:30 | Stage 3 / T-305 | /task T-305 | Regime detection subsystem — vol_30d, ADX_14, regime classification, confidence formula |
 | 2026-03-04 15:00 | Stage 3 / T-304 | /ship T-304 | Shipped XGBoost model training and MLV1Generator — v0.3.4 |
 | 2026-03-04 14:30 | Stage 3 / T-304 | /task T-304 | XGBoost model training and MLV1Generator — walk-forward training, Optuna HPO, real inference |
 | 2026-03-04 14:00 | Stage 3 / T-303 | /ship T-303 | Shipped walk-forward training framework — v0.3.3 |
