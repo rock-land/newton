@@ -5,6 +5,25 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 07:00 | Stage 4 / T-4G | /ship T-4G | Shipped Stage 4 gate — v0.4.8, merged to main |
+| 2026-03-05 06:30 | Stage 4 / T-4G | /task T-4G | Stage gate validation — all criteria pass |
+| 2026-03-05 06:00 | Stage 4 / FIX tasks | /verify-fixes | Verified 2 fix tasks (T-405-FIX1/FIX2): PASS — all 10 findings resolved, no regressions |
+| 2026-03-05 05:30 | Stage 4 / FIX tasks | /ship T-405-FIX1 | Shipped fix batch (T-405-FIX1/FIX2) — v0.4.6 |
+| 2026-03-05 05:00 | Stage 4 / FIX tasks | /task | Fix task batch: T-405-FIX1 + T-405-FIX2 — sanitize API errors, input validation, client contract fixes, version sync |
+| 2026-03-05 04:30 | Stage 4 / — | /stage-report | Compiled stage report: NOT READY — 2 FIX tasks added (T-405-FIX1, T-405-FIX2) |
+| 2026-03-05 04:00 | Stage 4 / — | /red-review | Red team review completed: Conditional Pass (1 critical, 4 high) |
+| 2026-03-05 03:30 | Stage 4 / — | /review | Code review completed: Ready for merge with conditions |
+| 2026-03-05 03:00 | Stage 4 / T-405 | /ship T-405 | Shipped Refresh UAT.md with practical test plan — v0.4.5 |
+| 2026-03-05 02:30 | Stage 4 / T-405 | /task T-405 | Refresh UAT.md with practical test plan — human-verifiable items mapped to automated tests and interactive panels |
+| 2026-03-05 02:00 | Stage 4 / T-404 | /ship T-404 | Shipped Interactive admin panels — v0.4.4 |
+| 2026-03-05 01:00 | Stage 4 / T-404 | /task T-404 | Interactive admin panels — Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard |
+| 2026-03-05 00:30 | Stage 4 / T-403 | /ship T-403 | Shipped UAT Runner UI — v0.4.3 |
+| 2026-03-05 00:00 | Stage 4 / T-403 | /task T-403 | UAT Runner UI — React page with suite cards, results table, run/re-run controls |
+| 2026-03-04 23:30 | Stage 4 / T-402 | /ship T-402 | Shipped UAT test API endpoints — v0.4.2 |
+| 2026-03-04 23:00 | Stage 4 / T-402 | /task T-402 | UAT test API endpoints — behavioral test suites with synthetic data, server-side runner |
+| 2026-03-04 22:30 | Stage 4 / T-401 | /ship T-401 | Shipped React + Vite + Tailwind + shadcn/ui foundation — v0.4.1 |
+| 2026-03-04 22:00 | Stage 4 / T-401 | /task T-401 | React + Vite + Tailwind + shadcn/ui foundation — client setup with sidebar nav, API layer, health panel |
+| 2026-03-04 21:30 | Stage 4 / — | /stage-init | Initialized Stage 4: UAT & Admin UI with 5 tasks + gate; DEC-015 recorded (React + shadcn/ui + Tailwind) |
 | 2026-03-04 21:00 | Stage 3 / T-3G | /ship T-3G | Shipped Stage 3 gate — v0.3.10, merged to main |
 | 2026-03-04 20:30 | Stage 3 / T-3G | /task T-3G | Stage gate validation — all criteria pass, quality gate PASS (397 tests, 92% coverage) |
 | 2026-03-04 20:00 | Stage 3 / FIX tasks | /verify-fixes | Verified 3 fix tasks (T-306-FIX1/FIX2/FIX3): PASS — all 7 findings resolved, no regressions |

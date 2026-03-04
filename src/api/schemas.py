@@ -40,6 +40,91 @@ class HealthResponse(BaseModel):
 
 
 
+class UATSuiteResponse(BaseModel):
+    """Summary of a UAT test suite."""
+
+    id: str
+    name: str
+    test_count: int
+
+
+class UATTestResult(BaseModel):
+    """Result of a single UAT test execution."""
+
+    id: str
+    name: str
+    suite: str
+    status: str
+    duration_ms: int
+    details: str
+    error: str | None = None
+
+
+class UATRunSummary(BaseModel):
+    """Aggregate summary of a UAT run."""
+
+    total: int
+    passed: int
+    failed: int
+    duration_ms: int
+
+
+class UATSuitesResponse(BaseModel):
+    """Response for GET /api/v1/uat/suites."""
+
+    suites: list[UATSuiteResponse]
+
+
+class UATRunRequest(BaseModel):
+    """Request body for POST /api/v1/uat/run."""
+
+    suite: str | None = None
+    test_id: str | None = None
+
+
+class UATRunResponse(BaseModel):
+    """Response for POST /api/v1/uat/run."""
+
+    results: list[UATTestResult]
+    summary: UATRunSummary
+
+
+class RegimeResponse(BaseModel):
+    """Regime state for a single instrument."""
+
+    instrument: str
+    regime_label: str
+    confidence: float
+    confidence_band: str
+    vol_30d: float
+    adx_14: float
+    vol_median: float
+    computed_at: datetime
+    error: str | None = None
+
+
+class ModelArtifactResponse(BaseModel):
+    """Metadata for a single model artifact version."""
+
+    model_type: str
+    instrument: str
+    version: int
+    training_date: datetime
+    hyperparameters: dict[str, Any]
+    performance_metrics: dict[str, float]
+    data_hash: str
+    artifact_hash: str
+
+
+class ModelListResponse(BaseModel):
+    """Response for GET /api/v1/models/{instrument}."""
+
+    instrument: str
+    model_type: str | None = None
+    artifacts: list[ModelArtifactResponse]
+    count: int
+
+
 def utc_now() -> datetime:
     """Return timezone-aware UTC now timestamp."""
 

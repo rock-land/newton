@@ -9,12 +9,12 @@ Newton is a multi-stage trading system built with:
 - **Data Pipeline** (Stage 1): Oanda + Binance data fetchers, TimescaleDB storage, technical indicators
 - **Event Detection** (Stage 2): Configurable event detection, token generation, Bayesian scoring
 - **ML Pipeline** (Stage 3): Feature engineering, XGBoost training, model evaluation
-- **Trading Engine** (Stage 4): Risk management, broker adapters, circuit breakers
-- **Backtesting** (Stage 5): Historical simulation, performance metrics
-- **Client** (Stage 6): Web UI for monitoring and control
+- **UAT & Admin UI** (Stage 4): React client, UAT test runner, admin panels (Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard)
+- **Trading Engine** (Stage 5): Risk management, broker adapters, circuit breakers
+- **Backtesting** (Stage 6): Historical simulation, performance metrics
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 3 complete (v0.3.10)** — ML Pipeline. Stage 4 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 4 complete (v0.4.8)** — UAT & Admin UI. Stage 5 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -108,13 +108,19 @@ npm run build
 
 Run options:
 
-- **Integrated mode (recommended):** run API via `./scripts/run_api.sh` and open `http://localhost:8000/`
-- **Standalone static mode:**
+- **Dev mode (recommended for development):**
   ```bash
   cd client
-  npm start
+  npm run dev
   ```
-  Opens on `http://localhost:4173` and proxies API calls to `http://127.0.0.1:8000` in client JS, so API server must still be running.
+  Opens on `http://localhost:4173` with hot reload. Proxies `/api` calls to `http://127.0.0.1:8000` (API server must be running).
+
+- **Integrated mode:** run API via `./scripts/run_api.sh` and open `http://localhost:8000/` (serves built client from `client/dist/`).
+
+The client provides:
+- **Health Dashboard** — system status, broker connectivity, candle freshness with auto-refresh
+- **UAT Runner** — run 28 behavioral tests across 7 suites with pass/fail results
+- **Admin Panels** — Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard
 
 ## Configuration
 
@@ -191,7 +197,8 @@ Newton uses `0.{STAGE}.{TASK}` versioning:
 - `0.1.5` = Stage 1 complete
 - `0.2.8` = Stage 2 complete
 - `0.3.10` = Stage 3 complete
-- Fix releases: `0.3.9` = Stage 3, fix task shipped
+- `0.4.8` = Stage 4 complete
+- Fix releases: `0.4.6` = Stage 4, fix tasks shipped
 
 See [CHANGELOG](./CHANGELOG.md) for release history.
 
