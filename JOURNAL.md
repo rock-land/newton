@@ -5,6 +5,9 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 21:00 | Stage 3 / T-3G | /ship T-3G | Shipped Stage 3 gate — v0.3.10, merged to main |
+| 2026-03-04 20:30 | Stage 3 / T-3G | /task T-3G | Stage gate validation — all criteria pass, quality gate PASS (397 tests, 92% coverage) |
+| 2026-03-04 20:00 | Stage 3 / FIX tasks | /verify-fixes | Verified 3 fix tasks (T-306-FIX1/FIX2/FIX3): PASS — all 7 findings resolved, no regressions |
 | 2026-03-04 19:30 | Stage 3 / FIX tasks | /ship T-306-FIX1 | Shipped fix batch (T-306-FIX1/FIX2/FIX3) — v0.3.9 |
 | 2026-03-04 19:00 | Stage 3 / FIX tasks | /task | Fix task batch: T-306-FIX1 + T-306-FIX2 + T-306-FIX3 — guard non-positive prices, NaN defaults, AUC enforcement, validate_config, held-out calibration, XGBoost caching, path sanitization |
 | 2026-03-04 18:30 | Stage 3 / — | /stage-report | Compiled stage report: NOT READY — 3 FIX tasks added (T-306-FIX1, T-306-FIX2, T-306-FIX3) |

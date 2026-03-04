@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.3.0` (Stage 3 start)
-**Latest Release:** `0.2.8` (Stage 2 complete)
+**Current Version:** `0.3.10` (Stage 3 complete)
+**Latest Release:** `0.3.10` (Stage 3 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -15,6 +15,7 @@ Status: Active
 | 0.2.0 | 2 | Stage 2 start |
 | 0.2.8 | 2 | Stage 2 complete |
 | 0.3.0 | 3 | Stage 3 start |
+| 0.3.10 | 3 | Stage 3 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -112,7 +113,7 @@ The following work was completed before governance was established. This is not 
 | T-306-FIX1 | Guard non-positive prices in regime detection and use NaN for missing indicator values | server | `compute_vol_30d()` raises `ValueError` when any close price ≤ 0; `_extract_row()` in feature_engineering.py uses `float('nan')` instead of `0.0` for missing indicator/return values (XGBoost handles NaN natively); tests added for zero/negative price guard and NaN propagation; quality gate passes | DONE |
 | T-306-FIX2 | Enforce AUC threshold, implement validate_config, and evaluate calibration on held-out data | server | `train_xgboost()` returns `None` for `production_model_bytes` when AUC below threshold (SPEC §5.6 compliance); `MLV1Generator.validate_config()` and `EnsembleV1Generator.validate_config()` check required parameter keys; `train_meta_learner()` evaluates calibration on held-out split (not training data); tests added for AUC enforcement, config validation, and held-out calibration; quality gate passes | DONE |
 | T-306-FIX3 | Cache XGBoost deserialization and add path sanitization to model store | server | `predict_xgboost()` accepts pre-deserialized booster or caches deserialized model to avoid redundant per-call deserialization; `model_store.py` validates `instrument` and `model_type` against `^[A-Za-z0-9_-]+$` regex, raises `ValueError` on path traversal attempts; tests added for caching behavior and path sanitization; quality gate passes | DONE |
-| T-3G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-3xx tasks DONE | TODO |
+| T-3G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-3xx tasks DONE | DONE |
 
 ---
 

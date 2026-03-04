@@ -786,8 +786,8 @@ CONDITIONAL PASS — Two critical findings (RC-1, RC-2) should be addressed. Fiv
 ### Stage Report
 
 - **Date:** 2026-03-04
-- **Status:** PENDING
-- **Sign-off:** —
+- **Status:** APPROVED
+- **Sign-off:** 2026-03-04
 
 #### Quality Gate Summary
 - lint: PASS
@@ -893,3 +893,39 @@ The code review found no critical or warning findings ("Ready for merge"), while
 **NOT READY**
 
 Two critical findings (SR-C1: NaN propagation in regime detection, SR-C2: misleading ML training data) and five high findings require remediation before the stage gate. Three FIX tasks have been added to TASKS.md. The underlying architecture is solid — 91% test coverage, all domain models frozen, strong spec compliance — but these edge cases and spec gaps must be addressed to ensure production-grade reliability for a trading system.
+
+### Fix Verification
+
+- **Date:** 2026-03-04
+- **Status:** PASS
+
+#### Verified Fixes
+
+| Fix Task | Original Finding | Status | Notes |
+|---|---|---|---|
+| T-306-FIX1 (SR-C1) | `np.log()` on close prices without guard against zero/negative | **PASS** | `compute_vol_30d()` at `detector.py:114` now checks `np.any(closes <= 0)` and raises `ValueError("non-positive price detected")` before `np.log(window)`. Tests `test_zero_price_raises` and `test_negative_price_raises` confirm both cases. |
+| T-306-FIX1 (SR-C2) | Missing indicator values default to 0.0 instead of NaN | **PASS** | `_extract_row()` at `feature_engineering.py:127` uses `_NAN = float("nan")` as default for both `ret.get(field, _NAN)` (line 134) and `ind.get(key, _NAN)` (line 141). Tests `test_missing_indicator_produces_nan` and `test_missing_ohlcv_return_produces_nan` verify NaN propagation. |
+| T-306-FIX2 (SR-H1) | AUC below threshold only logs warning; doesn't disable ML | **PASS** | `train_xgboost()` at `xgboost_trainer.py:149` sets `final_model_bytes = None if below else production_bytes`. `TrainingResult.production_model_bytes` typed as `bytes | None`. Test `test_below_auc_threshold_true_returns_none_model` verifies `result.production_model_bytes is None` when AUC < threshold. |
+| T-306-FIX2 (SR-H4) | Calibration evaluated on training data, not held-out | **PASS** | `train_meta_learner()` at `meta_learner.py:73-88` splits data 80/20, trains on 80%, evaluates calibration on held-out 20%. `n_training_samples` reflects the train split count. Tests `test_calibration_evaluated_on_held_out_data` (n=500, expects 400 training samples) and `test_basic_training` (n=100, expects 80) confirm. |
+| T-306-FIX2 (SR-H5) | `validate_config` always returns True | **PASS** | `MLV1Generator.validate_config()` at `signal.py:160-168` checks `model_bytes` and `feature_names` must appear together (partial config rejected). `EnsembleV1Generator.validate_config()` at `signal.py:243-250` validates `weights` must be a list of length 2. Seven tests in `TestValidateConfig` cover valid, scaffold, partial, and bad-weights cases for all three generators. |
+| T-306-FIX3 (SR-H2) | XGBoost model deserialized on every predict call | **PASS** | `predict_xgboost()` at `xgboost_trainer.py:183-185` converts bytearray to bytes for hashability, then calls `_get_booster()` which is decorated with `@functools.lru_cache(maxsize=8)`. Test `test_cached_deserialization` verifies same object identity on second call and cache hits ≥ 1. |
+| T-306-FIX3 (SR-H3) | No path sanitization on instrument/model_type | **PASS** | `model_store.py:40-48` defines `_SAFE_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")` and `_validate_path_component()`. Called from `_model_dir()` (line 57-58) for both `instrument` and `model_type`. Six tests verify rejection of `../etc`, `../../passwd`, `foo/bar`, `..`, and path traversal on load. |
+
+#### Quality Gate
+- lint: **PASS** — `ruff check .` all checks passed
+- types: **PASS** — `mypy src` no issues in 51 source files
+- tests: **PASS** — 397 passed, coverage 92%
+
+#### Regression Check
+- All 397 tests pass (377 pre-fix + 20 new)
+- Coverage improved from 91% to 92%
+- No new linting or type errors introduced
+- No regressions in regime detection, feature engineering, XGBoost training, meta-learner, model store, or signal routing
+
+#### New Issues Found
+None — fixes are clean.
+
+#### Verdict
+**PASS**
+
+All 7 findings (2 critical, 5 high) are fully resolved across 3 FIX tasks. Each fix has targeted test coverage verifying the specific behavior change. No regressions detected. The Stage Report can now be updated to APPROVED.
