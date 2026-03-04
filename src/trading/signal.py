@@ -18,6 +18,7 @@ from src.analysis.signal_contract import (
     SignalAction,
     SignalGenerator,
 )
+from src.analysis.meta_learner import MetaLearnerModel, predict_meta_learner
 from src.analysis.tokenizer import ClassificationRule, tokenize
 from src.analysis.xgboost_trainer import predict_xgboost
 
@@ -215,27 +216,100 @@ class MLV1Generator(_BaseGenerator):
 
 
 class EnsembleV1Generator(_BaseGenerator):
+    """Meta-learner ensemble generator (SPEC §5.7).
+
+    When ``config.parameters`` contains ``"meta_learner_model"`` (a
+    ``MetaLearnerModel``), uses logistic regression stacking:
+    bayesian_posterior + ml_probability + regime_confidence → combined
+    probability.
+
+    Without a meta-learner model, falls back to weighted blend of
+    ``bayesian_score`` and ``ml_score`` from features.
+    """
+
     generator_id = "ensemble_v1"
 
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:
             raise RecoverableSignalError("generator disabled")
-        bayesian_score = _clamp(features.values.get("bayesian_score", features.values.get("score", 0.5)))
-        ml_score = _clamp(features.values.get("ml_score", features.values.get("score", 0.5)))
+
+        meta_model: MetaLearnerModel | None = config.parameters.get("meta_learner_model")
+
+        if meta_model is not None:
+            return self._generate_meta_learner(instrument, features, config, meta_model)
+        return self._generate_weighted_blend(instrument, features, config)
+
+    def _generate_meta_learner(
+        self,
+        instrument: str,
+        features: FeatureSnapshot,
+        config: GeneratorConfig,
+        model: MetaLearnerModel,
+    ) -> Signal:
+        """Meta-learner inference path."""
+        try:
+            bayesian_posterior = features.values["bayesian_posterior"]
+            ml_probability = features.values["ml_probability"]
+            regime_confidence = features.values["regime_confidence"]
+        except KeyError as exc:
+            raise RecoverableSignalError(
+                f"Missing feature for meta-learner inference: {exc}"
+            ) from exc
+
+        probability = predict_meta_learner(
+            model,
+            bayesian_posterior=bayesian_posterior,
+            ml_probability=ml_probability,
+            regime_confidence=regime_confidence,
+        )
+        confidence = _clamp(1.0 - abs(bayesian_posterior - ml_probability))
+
+        return _build_signal(
+            instrument=instrument,
+            generator_id=self.id,
+            probability=probability,
+            confidence=confidence,
+            component_scores={
+                "bayesian": bayesian_posterior,
+                "ml": ml_probability,
+                "regime": regime_confidence,
+            },
+            metadata={"source": "meta_learner", **features.metadata},
+            generated_at=features.time,
+            thresholds=_extract_thresholds(config),
+        )
+
+    def _generate_weighted_blend(
+        self,
+        instrument: str,
+        features: FeatureSnapshot,
+        config: GeneratorConfig,
+    ) -> Signal:
+        """Weighted blend fallback (no meta-learner model)."""
+        bayesian_score = _clamp(
+            features.values.get("bayesian_score", features.values.get("score", 0.5))
+        )
+        ml_score = _clamp(
+            features.values.get("ml_score", features.values.get("score", 0.5))
+        )
         weights = config.parameters.get("weights", [0.6, 0.4])
         if not isinstance(weights, list) or len(weights) != 2:
             raise RecoverableSignalError("invalid ensemble weights")
         if abs(sum(float(w) for w in weights) - 1.0) > 0.01:
             raise RecoverableSignalError("ensemble weights must sum to 1.0")
-        probability = _clamp((bayesian_score * float(weights[0])) + (ml_score * float(weights[1])))
+
+        probability = _clamp(
+            (bayesian_score * float(weights[0])) + (ml_score * float(weights[1]))
+        )
         confidence = _clamp(1.0 - abs(bayesian_score - ml_score))
+
         return _build_signal(
             instrument=instrument,
             generator_id=self.id,
             probability=probability,
             confidence=confidence,
             component_scores={"bayesian": bayesian_score, "ml": ml_score},
-            metadata={"weights": weights, **features.metadata},
+            metadata={"source": "weighted_blend", "weights": weights, **features.metadata},
             generated_at=features.time,
             thresholds=_extract_thresholds(config),
         )

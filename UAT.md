@@ -168,3 +168,34 @@ Format: checkbox | test description | notes
 | [ ] | `detect_regime()` end-to-end with trending candle data returns `RegimeState` with ADX > 25 | |
 | [ ] | `detect_regime()` end-to-end with ranging candle data returns valid `RegimeState` | |
 | [ ] | Pure Python ADX fallback produces results in the same ballpark as TA-Lib ADX | |
+
+### T-306: Meta-Learner and EnsembleV1Generator
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `MetaLearnerModel` is frozen (attribute assignment raises `AttributeError`) | |
+| [ ] | `MetaLearnerModel` has fields: `coefficients`, `intercept`, `feature_names`, `calibration_errors`, `n_training_samples` | |
+| [ ] | `train_meta_learner()` with separable synthetic data returns `MetaLearnerModel` with 3 coefficients | |
+| [ ] | `train_meta_learner()` bayesian and ML coefficients are positive (informative inputs) | |
+| [ ] | `train_meta_learner()` with fewer than `min_samples` raises `ValueError` | |
+| [ ] | `train_meta_learner()` default `min_samples` is 100 — 99 samples raises `ValueError` | |
+| [ ] | `train_meta_learner()` with exactly 100 samples succeeds | |
+| [ ] | `predict_meta_learner()` returns probability in [0, 1] | |
+| [ ] | `predict_meta_learner()` with high bayesian+ml inputs returns higher probability than low inputs | |
+| [ ] | `predict_meta_learner()` with different inputs produces different outputs | |
+| [ ] | `predict_meta_learner()` with all-zero inputs returns valid probability in [0, 1] | |
+| [ ] | `predict_meta_learner()` with all-one inputs returns valid probability in [0, 1] | |
+| [ ] | `compute_calibration_error()` returns 10-element tuple (one per decile) | |
+| [ ] | `compute_calibration_error()` with well-calibrated data returns errors < 0.10 per decile | |
+| [ ] | `compute_calibration_error()` with poorly calibrated data (predict 0.95, observe 50%) returns high error in 0.9-1.0 bin | |
+| [ ] | `compute_calibration_error()` empty bins get 0.0 error | |
+| [ ] | `check_calibration()` returns True when all decile errors < 5pp | |
+| [ ] | `check_calibration()` returns False when any decile error ≥ 5pp | |
+| [ ] | `check_calibration()` with error exactly at 5pp (0.05) returns False (strict < threshold) | |
+| [ ] | `check_calibration()` with custom `max_error_pp` threshold works correctly | |
+| [ ] | `EnsembleV1Generator` with `meta_learner_model` in config uses meta-learner path (`metadata.source = "meta_learner"`) | |
+| [ ] | `EnsembleV1Generator` without `meta_learner_model` in config falls back to weighted blend (`metadata.source = "weighted_blend"`) | |
+| [ ] | `EnsembleV1Generator` with meta-learner: high bayesian+ml inputs produce higher probability than low inputs | |
+| [ ] | `EnsembleV1Generator.generate_batch()` with meta-learner model returns all signals with `source: "meta_learner"` | |
+| [ ] | `EnsembleV1Generator` with meta-learner but missing `regime_confidence` feature raises `RecoverableSignalError` | |
+| [ ] | End-to-end: train meta-learner → predict → EnsembleV1Generator produces valid signal with calibrated probability | |

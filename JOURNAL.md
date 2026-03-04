@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 17:00 | Stage 3 / T-306 | /ship T-306 | Shipped meta-learner and EnsembleV1Generator rewrite — v0.3.6 |
+| 2026-03-04 16:30 | Stage 3 / T-306 | /task T-306 | Meta-learner and EnsembleV1Generator rewrite — logistic regression stacking, calibration, ensemble integration |
 | 2026-03-04 16:00 | Stage 3 / T-305 | /ship T-305 | Shipped regime detection subsystem — v0.3.5 |
 | 2026-03-04 15:30 | Stage 3 / T-305 | /task T-305 | Regime detection subsystem — vol_30d, ADX_14, regime classification, confidence formula |
 | 2026-03-04 15:00 | Stage 3 / T-304 | /ship T-304 | Shipped XGBoost model training and MLV1Generator — v0.3.4 |
