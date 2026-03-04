@@ -265,3 +265,22 @@ Format: checkbox | test description | notes
 | [ ] | Regime suite tests: classification, confidence bands, non-positive prices, ADX | |
 | [ ] | Ensemble suite tests: meta-learner, prediction, calibration, ensemble signal | |
 | [ ] | End-to-End suite tests: fail-safe, fallback chain, multi-instrument, registry | |
+
+### T-403: UAT Runner UI
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | Navigate to `/uat` — UAT Runner page loads with suite cards (not placeholder) | |
+| [ ] | Each suite card shows suite name and test count badge | |
+| [ ] | Each suite card has a "Run Suite" button | |
+| [ ] | Click "Run All" — all 28 tests execute and summary bar shows "28/28 passed" | |
+| [ ] | Click "Run Suite" on a single suite — only that suite's tests execute | |
+| [ ] | Results table shows per-test rows with ID, name, status badge, and duration | |
+| [ ] | Click any test row — accordion expands showing suite, status, duration, and details | |
+| [ ] | Click expanded row again — accordion collapses | |
+| [ ] | Failed/error tests show error text in red in the expanded detail section | |
+| [ ] | Click "Re-run" on an individual test — only that test re-executes and result updates | |
+| [ ] | During execution, loading spinners appear on buttons and summary bar shows "Running..." | |
+| [ ] | All buttons are disabled while a run is in progress (no concurrent runs) | |
+| [ ] | With API server stopped, error banner appears with message | |
+| [ ] | Summary bar shows pass/fail count badge and total duration after any run | |

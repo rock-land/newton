@@ -84,6 +84,38 @@ export interface GeneratorInfo {
   description: string;
 }
 
+export interface UATSuite {
+  id: string;
+  name: string;
+  test_count: number;
+}
+
+export interface UATTestResult {
+  id: string;
+  name: string;
+  suite: string;
+  status: string;
+  duration_ms: number;
+  details: string;
+  error: string | null;
+}
+
+export interface UATRunSummary {
+  total: number;
+  passed: number;
+  failed: number;
+  duration_ms: number;
+}
+
+export interface UATSuitesResponse {
+  suites: UATSuite[];
+}
+
+export interface UATRunResponse {
+  results: UATTestResult[];
+  summary: UATRunSummary;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
@@ -103,6 +135,14 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return request<unknown>(`/ohlcv/${encodeURIComponent(instrument)}${suffix}`);
   },
+
+  uatSuites: () => request<UATSuitesResponse>("/uat/suites"),
+
+  uatRun: (opts?: { suite?: string; test_id?: string }) =>
+    request<UATRunResponse>("/uat/run", {
+      method: "POST",
+      body: JSON.stringify(opts ?? {}),
+    }),
 
   featuresMetadata: () => request<unknown>("/features/metadata"),
 
