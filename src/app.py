@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from src.api.v1 import data as data_v1
+from src.api.v1 import models as models_v1
+from src.api.v1 import regime as regime_v1
 from src.api.v1 import signals as signals_v1
 from src.api.v1 import uat as uat_v1
 
@@ -17,6 +19,8 @@ app = FastAPI(
 )
 
 app.include_router(data_v1.router, prefix="/api/v1", tags=["v1"])
+app.include_router(models_v1.router, prefix="/api/v1", tags=["v1"])
+app.include_router(regime_v1.router, prefix="/api/v1", tags=["v1"])
 app.include_router(signals_v1.router, prefix="/api/v1", tags=["v1"])
 app.include_router(uat_v1.router, prefix="/api/v1", tags=["v1"])
 

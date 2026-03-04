@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 02:00 | Stage 4 / T-404 | /ship T-404 | Shipped Interactive admin panels — v0.4.4 |
+| 2026-03-05 01:00 | Stage 4 / T-404 | /task T-404 | Interactive admin panels — Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard |
 | 2026-03-05 00:30 | Stage 4 / T-403 | /ship T-403 | Shipped UAT Runner UI — v0.4.3 |
 | 2026-03-05 00:00 | Stage 4 / T-403 | /task T-403 | UAT Runner UI — React page with suite cards, results table, run/re-run controls |
 | 2026-03-04 23:30 | Stage 4 / T-402 | /ship T-402 | Shipped UAT test API endpoints — v0.4.2 |

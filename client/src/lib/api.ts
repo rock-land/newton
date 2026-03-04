@@ -116,16 +116,107 @@ export interface UATRunResponse {
   summary: UATRunSummary;
 }
 
+export interface RegimeResponse {
+  instrument: string;
+  regime_label: string;
+  confidence: number;
+  confidence_band: string;
+  vol_30d: number;
+  adx_14: number;
+  vol_median: number;
+  computed_at: string;
+  error: string | null;
+}
+
+export interface ModelArtifact {
+  model_type: string;
+  instrument: string;
+  version: number;
+  training_date: string;
+  hyperparameters: Record<string, unknown>;
+  performance_metrics: Record<string, number>;
+  data_hash: string;
+  artifact_hash: string;
+}
+
+export interface ModelListResponse {
+  instrument: string;
+  model_type: string | null;
+  artifacts: ModelArtifact[];
+  count: number;
+}
+
+export interface GeneratorsResponse {
+  scaffold: boolean;
+  count: number;
+  generators: { id: string; enabled: boolean; parameters: Record<string, unknown> }[];
+}
+
+export interface SignalFullResponse {
+  scaffold: boolean;
+  warning?: string;
+  instrument: string;
+  action: string;
+  probability: number;
+  confidence: number;
+  component_scores: Record<string, number>;
+  metadata: Record<string, unknown>;
+  generated_at: string;
+  generator_id: string;
+}
+
+export interface FeatureMetadataEntry {
+  namespace: string;
+  feature_key: string;
+  display_name: string;
+  description: string;
+  unit: string;
+  params: Record<string, unknown>;
+  provider: string;
+}
+
+export interface FeatureMetadataResponse {
+  count: number;
+  registry: FeatureMetadataEntry[];
+}
+
+export interface FeatureRow {
+  time: string;
+  instrument: string;
+  interval: string;
+  namespace: string;
+  feature_key: string;
+  value: number;
+}
+
+export interface FeaturesResponse {
+  instrument: string;
+  interval: string;
+  start: string;
+  limit: number;
+  indicators: string[] | null;
+  count: number;
+  data: FeatureRow[];
+}
+
+export interface ComputeFeaturesResponse {
+  instrument: string;
+  interval: string;
+  candles_read: number;
+  features_computed: number;
+  metadata_stored: number;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
   health: () => request<HealthResponse>("/health"),
 
-  generators: () => request<GeneratorInfo[]>("/signals/generators"),
+  generators: () => request<GeneratorsResponse>("/signals/generators"),
 
   signal: (instrument: string, generator?: string) => {
     const params = generator ? `?generator=${encodeURIComponent(generator)}` : "";
-    return request<SignalResponse>(`/signals/${encodeURIComponent(instrument)}${params}`);
+    return request<SignalFullResponse>(`/signals/${encodeURIComponent(instrument)}${params}`);
   },
 
   ohlcv: (instrument: string, params?: { interval?: string; limit?: number }) => {
@@ -144,13 +235,33 @@ export const api = {
       body: JSON.stringify(opts ?? {}),
     }),
 
-  featuresMetadata: () => request<unknown>("/features/metadata"),
+  featuresMetadata: () => request<FeatureMetadataResponse>("/features/metadata"),
 
-  features: (instrument: string, params?: { interval?: string; namespace?: string }) => {
+  features: (
+    instrument: string,
+    params: { interval: string; start: string; limit?: number; indicators?: string },
+  ) => {
     const qs = new URLSearchParams();
-    if (params?.interval) qs.set("interval", params.interval);
-    if (params?.namespace) qs.set("namespace", params.namespace);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return request<unknown>(`/features/${encodeURIComponent(instrument)}${suffix}`);
+    qs.set("interval", params.interval);
+    qs.set("start", params.start);
+    if (params.limit) qs.set("limit", String(params.limit));
+    if (params.indicators) qs.set("indicators", params.indicators);
+    return request<FeaturesResponse>(
+      `/features/${encodeURIComponent(instrument)}?${qs.toString()}`,
+    );
+  },
+
+  computeFeatures: (instrument: string, interval: string) =>
+    request<ComputeFeaturesResponse>("/features/compute", {
+      method: "POST",
+      body: JSON.stringify({ instrument, interval }),
+    }),
+
+  regime: (instrument: string) =>
+    request<RegimeResponse>(`/regime/${encodeURIComponent(instrument)}`),
+
+  models: (instrument: string, modelType?: string) => {
+    const params = modelType ? `?model_type=${encodeURIComponent(modelType)}` : "";
+    return request<ModelListResponse>(`/models/${encodeURIComponent(instrument)}${params}`);
   },
 };

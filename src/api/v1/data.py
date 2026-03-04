@@ -10,6 +10,7 @@ import time
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from src.api.schemas import (
     BrokerHealth,
@@ -332,4 +333,100 @@ def get_features(
         "indicators": indicator_values,
         "count": len(data),
         "data": data,
+    }
+
+
+class ComputeFeaturesRequest(BaseModel):
+    """Request body for POST /api/v1/features/compute."""
+
+    instrument: str
+    interval: str = "1h"
+
+
+@router.post("/features/compute")
+def compute_features(req: ComputeFeaturesRequest) -> dict[str, Any]:
+    """Compute technical indicators from stored OHLCV data and save to features table.
+
+    Reads candle data from the database, runs the indicator pipeline
+    (RSI, MACD, Bollinger Bands, OBV, ATR), and writes results back.
+    """
+    db_url = _get_database_url()
+
+    try:
+        import psycopg
+
+        from src.data.feature_store import (
+            build_feature_records,
+            store_feature_metadata,
+            store_feature_records,
+        )
+        from src.data.fetcher_base import CandleRecord
+        from src.data.indicators import TechnicalIndicatorProvider
+
+        with psycopg.connect(db_url) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT time, instrument, interval, open, high, low, close,
+                           volume, spread_avg, verified, source
+                    FROM ohlcv
+                    WHERE instrument = %s AND interval = %s AND verified = TRUE
+                    ORDER BY time ASC
+                    """,
+                    (req.instrument, req.interval),
+                )
+                rows = cur.fetchall()
+
+            if not rows:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No OHLCV data for {req.instrument}/{req.interval}",
+                )
+
+            candles = [
+                CandleRecord(
+                    time=row[0],
+                    instrument=row[1],
+                    interval=row[2],
+                    open=float(row[3]),
+                    high=float(row[4]),
+                    low=float(row[5]),
+                    close=float(row[6]),
+                    volume=float(row[7]),
+                    spread_avg=float(row[8]) if row[8] is not None else None,
+                    verified=bool(row[9]),
+                    source=row[10],
+                )
+                for row in rows
+            ]
+
+            provider = TechnicalIndicatorProvider()
+            values_by_time = provider.get_features(
+                instrument=req.instrument,
+                interval=req.interval,
+                candles=candles,
+                lookback=len(candles),
+            )
+
+            feature_rows = build_feature_records(
+                instrument=req.instrument,
+                interval=req.interval,
+                namespace=provider.feature_namespace,
+                values_by_time=values_by_time,
+            )
+            feature_count = store_feature_records(conn, feature_rows)  # type: ignore[arg-type]
+            metadata_count = store_feature_metadata(conn, provider.get_feature_metadata())  # type: ignore[arg-type]
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to compute features for %s/%s", req.instrument, req.interval)
+        raise HTTPException(status_code=500, detail=f"Feature computation failed: {exc}") from exc
+
+    return {
+        "instrument": req.instrument,
+        "interval": req.interval,
+        "candles_read": len(rows),
+        "features_computed": feature_count,
+        "metadata_stored": metadata_count,
     }

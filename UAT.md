@@ -266,6 +266,30 @@ Format: checkbox | test description | notes
 | [ ] | Ensemble suite tests: meta-learner, prediction, calibration, ensemble signal | |
 | [ ] | End-to-End suite tests: fail-safe, fallback chain, multi-instrument, registry | |
 
+### T-404: Interactive Admin Panels
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | Navigate to `/admin` — Admin page loads with 4 tabs: Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard | |
+| [ ] | **Feature Explorer:** Select instrument (EUR_USD/BTC_USD) and interval (1h), click "Load Features" — table displays with indicator columns (RSI, MACD, BB, OBV, ATR) | |
+| [ ] | **Feature Explorer:** Click "Compute Features" — API runs indicator pipeline and returns success summary (candles read, features computed, metadata stored) | |
+| [ ] | **Feature Explorer:** After computing, click "Load Features" again — newly computed features appear in table | |
+| [ ] | **Feature Explorer:** Overview explanation text is visible describing each indicator | |
+| [ ] | **Signal Inspector:** Select instrument and generator, click "Generate Signal" — signal card shows action badge, probability, confidence, generator ID | |
+| [ ] | **Signal Inspector:** Component scores table displays with score values | |
+| [ ] | **Signal Inspector:** Metadata section shows JSON metadata from signal response | |
+| [ ] | **Signal Inspector:** Overview explanation text describes signal actions and engine types | |
+| [ ] | **Regime Monitor:** On tab click, regime data auto-loads for both instruments (EUR_USD, BTC_USD) | |
+| [ ] | **Regime Monitor:** Each instrument card shows regime label badge, confidence value with band, vol_30d, ADX_14, vol_median | |
+| [ ] | **Regime Monitor:** Overview explanation text describes regime types and confidence bands | |
+| [ ] | **Model Dashboard:** Select instrument, click "Load Models" — version history table displays (or empty message if no models trained) | |
+| [ ] | **Model Dashboard:** Overview explanation text describes model types and metrics | |
+| [ ] | All dropdowns are readable in dark mode (no white-on-white text) | |
+| [ ] | All panels render correctly in dark mode with proper contrast | |
+| [ ] | `GET /api/v1/regime/{instrument}` returns regime data with vol_30d, adx_14, confidence, regime_label | |
+| [ ] | `GET /api/v1/models/{instrument}` returns model artifact list (empty if none trained) | |
+| [ ] | `POST /api/v1/features/compute` with valid instrument/interval computes and stores features | |
+
 ### T-403: UAT Runner UI
 
 | Pass | Test | Notes |

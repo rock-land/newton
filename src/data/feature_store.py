@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json as _json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
@@ -92,7 +93,7 @@ def store_feature_metadata(connection: ConnectionLike, metadata: list[FeatureMet
             m.display_name,
             m.description,
             m.unit,
-            m.params,
+            _json.dumps(m.params),
             m.provider,
         )
         for m in deduped.values()
