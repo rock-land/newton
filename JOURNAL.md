@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 12:00 | Stage 5 / T-504 | /ship T-504 | Shipped risk management engine — v0.5.4 |
+| 2026-03-04 11:30 | Stage 5 / T-504 | /task T-504 | Risk management engine in risk.py — config loading, pre-trade checks, Kelly sizing, in-trade controls |
 | 2026-03-04 11:00 | Stage 5 / T-503 | /ship T-503 | Shipped BinanceSpotAdapter — v0.5.3 |
 | 2026-03-04 10:30 | Stage 5 / T-503 | /task T-503 | Implement BinanceSpotAdapter in broker_binance.py — Binance REST broker adapter |
 | 2026-03-04 10:00 | Stage 5 / T-502 | /ship T-502 | Shipped OandaAdapter — v0.5.2 |
