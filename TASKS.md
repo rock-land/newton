@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.4.0` (Stage 4 start)
-**Latest Release:** `0.3.10` (Stage 3 complete)
+**Current Version:** `0.5.0` (Stage 5 start)
+**Latest Release:** `0.4.8` (Stage 4 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -18,6 +18,7 @@ Status: Active
 | 0.3.10 | 3 | Stage 3 complete |
 | 0.4.0 | 4 | Stage 4 start |
 | 0.4.8 | 4 | Stage 4 complete |
+| 0.5.0 | 5 | Stage 5 start |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -136,6 +137,24 @@ The following work was completed before governance was established. This is not 
 
 ---
 
+## Stage 5: Trading Engine
+
+**Branch:** `stage/5-trading-engine`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-501 | Implement `BrokerAdapter` protocol and domain models in `broker_base.py` | server | `BrokerAdapter` protocol per SPEC §3.3 with all 7 methods; frozen dataclasses for `AccountInfo`, `Position`, `OrderResult`, `OrderStatus`; `client_order_id` format `NEWTON-{instrument}-{timestamp_ms}` per §5.9; tests verify protocol compliance and dataclass immutability | TODO |
+| T-502 | Implement `OandaAdapter` in `broker_oanda.py` | server | Oanda v20 REST API adapter implementing `BrokerAdapter`; `place_market_order` with `stopLossOnFill` per §5.9; retry 3× with exponential backoff (2s, 4s, 8s) per §3.5; validates against configured `base_url`; all methods tested with fake HTTP client | TODO |
+| T-503 | Implement `BinanceSpotAdapter` in `broker_binance.py` | server | Binance REST API adapter implementing `BrokerAdapter`; HMAC-SHA256 signed requests; market order + immediate OCO stop-loss per §5.9; if OCO fails, close position and alert; minimum notional and lot size validation; commission accounted in position sizing; retry 3× with backoff; all methods tested with fake HTTP client | TODO |
+| T-504 | Risk management engine in `risk.py` | server | Risk config loading with 3-tier precedence (instrument > strategy > global per §6.1); validation bounds enforced per §6.1; pre-trade checks per §6.3 (position limit, portfolio exposure, Kelly sizing, circuit breaker, data freshness, model freshness, regime confidence); Kelly criterion formula; in-trade controls (hard stop, trailing stop, time stop, volatility check) per §6.4; 100% branch coverage; tests cover all pre-trade check outcomes and sizing calculations | TODO |
+| T-505 | Circuit breaker system in `circuit_breaker.py` | server | 5 circuit breakers per §6.5: daily loss, max drawdown, consecutive losses, model degradation, kill switch; per-instrument + portfolio scope; automatic reset (daily loss at 00:00 UTC, consecutive after timeout) and manual reset (max drawdown, kill switch); kill switch closes all positions on all brokers; state persisted and queryable; 100% branch coverage; tests cover trigger, reset, and edge cases for each breaker | TODO |
+| T-506 | Order execution orchestrator in `executor.py` | server | End-to-end trade execution: signal → pre-trade checks → position sizing → order submission → stop-loss placement → trade record; `client_order_id` idempotency per §5.11; retry 3× on 5xx/timeout, no retry on 4xx; trade lifecycle (PENDING → OPEN → CLOSED); stop-loss updates per §6.4; writes to `trades` table; 100% branch coverage; tests cover full lifecycle with fake broker adapter | TODO |
+| T-507 | Position reconciliation loop in `reconciler.py` | server | Reconciliation per §5.12: fetch broker positions, compare with internal `trades` (status=OPEN); classify MATCH/SYSTEM_EXTRA/BROKER_EXTRA; SYSTEM_EXTRA → mark CLOSED + CRITICAL alert; BROKER_EXTRA → halt entries + require manual review; log to `reconciliation_log` table; designed for 60s frequency; 100% branch coverage; tests cover all three classification states | TODO |
+| T-508 | Trading API endpoints and kill switch | server | `GET /api/v1/trades` with filters; `POST /api/v1/kill` activate kill switch; `DELETE /api/v1/kill` deactivate with confirmation; `GET /api/v1/config/risk` current config; `PUT /api/v1/config/risk` update with validation + audit logging to `config_changes`; API tests for all endpoints | TODO |
+| T-5G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; 100% branch on `risk.py`, `executor.py`, `reconciler.py`, `circuit_breaker.py`; all T-5xx tasks DONE | TODO |
+
+---
+
 ## Backlog
 
 <!--
@@ -145,7 +164,7 @@ during /stage-init, NOT in advance. Keep entries lightweight.
 
 | Stage | Name | Summary |
 |-------|------|---------|
-| 5 | Trading Engine | Broker adapters, risk management, order execution, reconciliation, circuit breakers (SPEC §6) |
+| ~~5~~ | ~~Trading Engine~~ | ~~Active — see Stage 5 above~~ |
 | 6 | Backtesting | Walk-forward validation, purged K-fold CV, performance metrics, reporting (SPEC §9) |
 | 7 | Client Web UI | Signal display, data viewer with charting, trade monitoring — React foundation from Stage 4 (SPEC §8) |
 | 8 | Paper Trading | Oanda practice account + Binance testnet integration, live data pipeline (SPEC §11) |
