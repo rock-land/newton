@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -684,9 +684,8 @@ function ModelDashboard() {
               const auc = a.performance_metrics["auc_roc"] ?? a.performance_metrics["auc"];
               const expanded = expandedVersion === key;
               return (
-                <>
+                <Fragment key={key}>
                   <TableRow
-                    key={key}
                     className="cursor-pointer select-none hover:bg-muted/40"
                     onClick={() => setExpandedVersion(expanded ? null : key)}
                   >
@@ -739,7 +738,7 @@ function ModelDashboard() {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </TableBody>

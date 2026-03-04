@@ -24,6 +24,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["data"])
 
+_SUPPORTED_INSTRUMENTS = {"EUR_USD", "BTC_USD"}
+
+
+def _validate_instrument(instrument: str) -> None:
+    if instrument not in _SUPPORTED_INSTRUMENTS:
+        raise HTTPException(status_code=400, detail=f"Unsupported instrument: {instrument}")
+
 
 @dataclass
 class HealthService:
@@ -174,6 +181,7 @@ def get_ohlcv(
 ) -> dict[str, Any]:
     """Query historical OHLCV rows for an instrument."""
 
+    _validate_instrument(instrument)
     db_url = _get_database_url()
 
     try:
@@ -197,7 +205,8 @@ def get_ohlcv(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to query OHLCV: {exc}") from exc
+        logger.exception("Failed to query OHLCV for %s", instrument)
+        raise HTTPException(status_code=500, detail="Failed to query OHLCV data") from exc
 
     data = [
         {
@@ -248,7 +257,8 @@ def get_feature_metadata() -> dict[str, Any]:
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to query feature metadata: {exc}") from exc
+        logger.exception("Failed to query feature metadata")
+        raise HTTPException(status_code=500, detail="Failed to query feature metadata") from exc
 
     registry = [
         {
@@ -282,6 +292,7 @@ def get_features(
 ) -> dict[str, Any]:
     """Query computed features for an instrument."""
 
+    _validate_instrument(instrument)
     db_url = _get_database_url()
     indicator_values = _parse_indicators(indicators)
 
@@ -311,7 +322,8 @@ def get_features(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to query features: {exc}") from exc
+        logger.exception("Failed to query features for %s", instrument)
+        raise HTTPException(status_code=500, detail="Failed to query features") from exc
 
     data = [
         {
@@ -350,6 +362,7 @@ def compute_features(req: ComputeFeaturesRequest) -> dict[str, Any]:
     Reads candle data from the database, runs the indicator pipeline
     (RSI, MACD, Bollinger Bands, OBV, ATR), and writes results back.
     """
+    _validate_instrument(req.instrument)
     db_url = _get_database_url()
 
     try:
@@ -372,6 +385,7 @@ def compute_features(req: ComputeFeaturesRequest) -> dict[str, Any]:
                     FROM ohlcv
                     WHERE instrument = %s AND interval = %s AND verified = TRUE
                     ORDER BY time ASC
+                    LIMIT 50000
                     """,
                     (req.instrument, req.interval),
                 )
@@ -421,7 +435,7 @@ def compute_features(req: ComputeFeaturesRequest) -> dict[str, Any]:
         raise
     except Exception as exc:
         logger.exception("Failed to compute features for %s/%s", req.instrument, req.interval)
-        raise HTTPException(status_code=500, detail=f"Feature computation failed: {exc}") from exc
+        raise HTTPException(status_code=500, detail="Feature computation failed") from exc
 
     return {
         "instrument": req.instrument,

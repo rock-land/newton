@@ -120,6 +120,22 @@ def test_models_endpoint_filter_by_model_type() -> None:
     assert data["model_type"] == "xgboost"
 
 
+def test_models_endpoint_rejects_invalid_model_type() -> None:
+    """Invalid model_type should return 400 with descriptive message."""
+    resp = client.get("/api/v1/models/EUR_USD?model_type=invalid_type")
+    assert resp.status_code == 400
+    detail = resp.json()["detail"]
+    assert "Invalid model_type" in detail
+    assert "bayesian" in detail
+
+
+def test_models_endpoint_accepts_valid_model_types() -> None:
+    """All three valid model types should be accepted."""
+    for mt in ("bayesian", "xgboost", "meta_learner"):
+        resp = client.get(f"/api/v1/models/EUR_USD?model_type={mt}")
+        assert resp.status_code == 200, f"model_type={mt} should be accepted"
+
+
 def test_models_endpoint_response_shape() -> None:
     """Verify the response shape includes all required fields."""
     resp = client.get("/api/v1/models/EUR_USD")

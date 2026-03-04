@@ -42,6 +42,12 @@ def get_models(
     if instrument not in _SUPPORTED_INSTRUMENTS:
         raise HTTPException(status_code=404, detail=f"Unsupported instrument: {instrument}")
 
+    if model_type and model_type not in _MODEL_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid model_type: {model_type}. Must be one of: {', '.join(_MODEL_TYPES)}",
+        )
+
     base_dir = _models_dir()
     types_to_query = [model_type] if model_type else _MODEL_TYPES
 

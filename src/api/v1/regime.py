@@ -89,8 +89,12 @@ def get_regime(instrument: str) -> RegimeResponse:
     lows = np.array([float(r[1]) for r in rows])
     closes = np.array([float(r[2]) for r in rows])
 
-    vol_30d = compute_vol_30d(closes=closes, annualization_factor=annualization)
-    adx_14 = compute_adx_14(highs=highs, lows=lows, closes=closes)
+    try:
+        vol_30d = compute_vol_30d(closes=closes, annualization_factor=annualization)
+        adx_14 = compute_adx_14(highs=highs, lows=lows, closes=closes)
+    except (ValueError, ZeroDivisionError):
+        logger.exception("Regime: computation failed for %s", instrument)
+        return _unknown_regime(instrument, now, "Regime computation failed")
 
     # Compute vol_median from rolling vol_30d over available history
     vol_history = _rolling_vol_30d(closes, annualization)
@@ -130,7 +134,7 @@ def _rolling_vol_30d(closes: np.ndarray, annualization: float) -> list[float]:
     """Compute rolling vol_30d values from close prices for vol_median estimation."""
     vols: list[float] = []
     window = VOL_WINDOW + 1
-    step = 20  # Compute every ~month (20 trading days)
+    step = 20  # Compute every ~20 bars for rolling window sampling
     for end in range(window, len(closes) + 1, step):
         segment = closes[:end]
         try:

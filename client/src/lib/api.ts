@@ -219,12 +219,15 @@ export const api = {
     return request<SignalFullResponse>(`/signals/${encodeURIComponent(instrument)}${params}`);
   },
 
-  ohlcv: (instrument: string, params?: { interval?: string; limit?: number }) => {
+  ohlcv: (
+    instrument: string,
+    params: { interval: string; start: string; limit?: number },
+  ) => {
     const qs = new URLSearchParams();
-    if (params?.interval) qs.set("interval", params.interval);
-    if (params?.limit) qs.set("limit", String(params.limit));
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return request<unknown>(`/ohlcv/${encodeURIComponent(instrument)}${suffix}`);
+    qs.set("interval", params.interval);
+    qs.set("start", params.start);
+    if (params.limit) qs.set("limit", String(params.limit));
+    return request<unknown>(`/ohlcv/${encodeURIComponent(instrument)}?${qs.toString()}`);
   },
 
   uatSuites: () => request<UATSuitesResponse>("/uat/suites"),

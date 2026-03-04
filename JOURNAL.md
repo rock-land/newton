@@ -5,6 +5,11 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 05:30 | Stage 4 / FIX tasks | /ship T-405-FIX1 | Shipped fix batch (T-405-FIX1/FIX2) — v0.4.6 |
+| 2026-03-05 05:00 | Stage 4 / FIX tasks | /task | Fix task batch: T-405-FIX1 + T-405-FIX2 — sanitize API errors, input validation, client contract fixes, version sync |
+| 2026-03-05 04:30 | Stage 4 / — | /stage-report | Compiled stage report: NOT READY — 2 FIX tasks added (T-405-FIX1, T-405-FIX2) |
+| 2026-03-05 04:00 | Stage 4 / — | /red-review | Red team review completed: Conditional Pass (1 critical, 4 high) |
+| 2026-03-05 03:30 | Stage 4 / — | /review | Code review completed: Ready for merge with conditions |
 | 2026-03-05 03:00 | Stage 4 / T-405 | /ship T-405 | Shipped Refresh UAT.md with practical test plan — v0.4.5 |
 | 2026-03-05 02:30 | Stage 4 / T-405 | /task T-405 | Refresh UAT.md with practical test plan — human-verifiable items mapped to automated tests and interactive panels |
 | 2026-03-05 02:00 | Stage 4 / T-404 | /ship T-404 | Shipped Interactive admin panels — v0.4.4 |

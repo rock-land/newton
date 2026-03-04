@@ -10,9 +10,12 @@ from src.api.v1 import uat as uat_v1
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 
+_version_file = ROOT_DIR / "VERSION"
+_app_version = _version_file.read_text().strip() if _version_file.exists() else "0.0.0"
+
 app = FastAPI(
     title="Newton Server",
-    version="0.1.0",
+    version=_app_version,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/v1/openapi.json",
