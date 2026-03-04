@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 15:00 | Stage 3 / T-304 | /ship T-304 | Shipped XGBoost model training and MLV1Generator — v0.3.4 |
+| 2026-03-04 14:30 | Stage 3 / T-304 | /task T-304 | XGBoost model training and MLV1Generator — walk-forward training, Optuna HPO, real inference |
 | 2026-03-04 14:00 | Stage 3 / T-303 | /ship T-303 | Shipped walk-forward training framework — v0.3.3 |
 | 2026-03-04 13:30 | Stage 3 / T-303 | /task T-303 | Walk-forward training framework — cross-validation with embargo, fold metrics, OOF predictions |
 | 2026-03-04 13:00 | Stage 3 / T-302 | /ship T-302 | Shipped model artifact storage and versioning — v0.3.2 |

@@ -7,3 +7,6 @@ mypy
 openapi-spec-validator
 psycopg[binary]
 ta-lib
+xgboost
+optuna
+scikit-learn

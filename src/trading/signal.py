@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 import logging
 from typing import Any
 
+import numpy as np
+
 from src.analysis.bayesian import BayesianModel, predict
 from src.analysis.signal_contract import (
     FeatureSnapshot,
@@ -17,6 +19,7 @@ from src.analysis.signal_contract import (
     SignalGenerator,
 )
 from src.analysis.tokenizer import ClassificationRule, tokenize
+from src.analysis.xgboost_trainer import predict_xgboost
 
 logger = logging.getLogger(__name__)
 
@@ -140,13 +143,53 @@ class BayesianV1Generator(_BaseGenerator):
 
 
 class MLV1Generator(_BaseGenerator):
-    """Scaffold ML signal generator (Stage 3). Independent per DEC-005."""
+    """XGBoost ML signal generator (SPEC §5.6). Independent per DEC-005.
+
+    When ``config.parameters`` contains ``"model_bytes"`` (serialized XGBoost
+    model) and ``"feature_names"`` (ordered feature name tuple), the generator
+    uses real XGBoost inference: extract features → predict → Signal.
+
+    Without a model, falls back to scaffold behavior (uses
+    ``features.values["score"]``).
+    """
 
     generator_id = "ml_v1"
 
     def generate(self, instrument: str, features: FeatureSnapshot, config: GeneratorConfig) -> Signal:
         if not config.enabled:
             raise RecoverableSignalError("generator disabled")
+
+        model_bytes: bytes | None = config.parameters.get("model_bytes")
+        feature_names: tuple[str, ...] | None = config.parameters.get("feature_names")
+
+        thresholds = _extract_thresholds(config)
+
+        if model_bytes is not None and feature_names is not None:
+            # Real XGBoost inference path
+            try:
+                values = [features.values[name] for name in feature_names]
+            except KeyError as exc:
+                raise RecoverableSignalError(
+                    f"Missing feature for ML inference: {exc}"
+                ) from exc
+
+            feature_vector = np.array(values, dtype=np.float64)
+            probability = predict_xgboost(
+                model_bytes=model_bytes,
+                feature_vector=feature_vector,
+            )
+            return _build_signal(
+                instrument=instrument,
+                generator_id=self.id,
+                probability=probability,
+                confidence=_clamp(features.values.get("confidence", 0.5)),
+                component_scores={"ml": probability},
+                metadata={"source": "xgboost_engine", **features.metadata},
+                generated_at=features.time,
+                thresholds=thresholds,
+            )
+
+        # Scaffold fallback: use raw score from features
         probability = _clamp(features.values.get("score", 0.5))
         return _build_signal(
             instrument=instrument,
@@ -156,7 +199,7 @@ class MLV1Generator(_BaseGenerator):
             component_scores={"ml": probability},
             metadata={"source": "scaffold", **features.metadata},
             generated_at=features.time,
-            thresholds=_extract_thresholds(config),
+            thresholds=thresholds,
         )
 
     def generate_batch(

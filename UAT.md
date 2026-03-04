@@ -121,3 +121,23 @@ Format: checkbox | test description | notes
 | [ ] | `collect_results()` concatenates OOF predictions, labels, and timestamps from all folds | |
 | [ ] | `collect_results()` computes mean AUC-ROC as average of per-fold AUC-ROC values | |
 | [ ] | All dataclasses (`WalkForwardConfig`, `WalkForwardFold`, `FoldResult`, `WalkForwardResult`) are frozen | |
+
+### T-304: XGBoost Model Training and MLV1Generator
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `train_xgboost()` with synthetic feature matrix returns `TrainingResult` with populated `production_model_bytes` and `production_hyperparameters` | |
+| [ ] | Walk-forward folds are populated (≥2 folds, OOF predictions and labels non-empty) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.99` sets `below_auc_threshold=True` | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.0` sets `below_auc_threshold=False` | |
+| [ ] | Production model from `train_xgboost()` can predict via `predict_xgboost()` — returns probability in [0, 1] | |
+| [ ] | All OOF predictions are in [0.0, 1.0] range | |
+| [ ] | Optimized hyperparameters are in valid ranges (max_depth 3-10, learning_rate 0.01-0.3, etc.) | |
+| [ ] | `predict_xgboost()` round-trip: train model → serialize → predict returns valid probability | |
+| [ ] | `predict_xgboost()` with different inputs produces different probabilities | |
+| [ ] | `MLV1Generator` with `model_bytes` and `feature_names` in config uses real XGBoost inference (`metadata.source = "xgboost_engine"`) | |
+| [ ] | `MLV1Generator` without model in config falls back to scaffold behavior (`metadata.source = "scaffold"`) | |
+| [ ] | `MLV1Generator` with model but missing feature in `features.values` raises `RecoverableSignalError` | |
+| [ ] | `MLV1Generator.generate_batch()` with model returns signals with `source: "xgboost_engine"` for all snapshots | |
+| [ ] | `XGBoostHyperparameters` and `TrainingResult` dataclasses are frozen | |
+| [ ] | Training is reproducible with the same `random_seed` | |
