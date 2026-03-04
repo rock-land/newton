@@ -18,9 +18,9 @@ app = FastAPI(
 app.include_router(data_v1.router, prefix="/api/v1", tags=["v1"])
 app.include_router(signals_v1.router, prefix="/api/v1", tags=["v1"])
 
-if (ROOT_DIR / "client/public").exists():
+if (ROOT_DIR / "client/dist").exists():
     app.mount(
         "/",
-        StaticFiles(directory=ROOT_DIR / "client/public", html=True),
+        StaticFiles(directory=ROOT_DIR / "client/dist", html=True),
         name="client",
     )

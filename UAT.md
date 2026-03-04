@@ -218,3 +218,27 @@ Format: checkbox | test description | notes
 | [ ] | `model_store` rejects path traversal in instrument name (`../etc` raises `ValueError`) | |
 | [ ] | `model_store` rejects path traversal in model_type (`../../passwd` raises `ValueError`) | |
 | [ ] | `model_store` rejects slash in instrument name (`foo/bar` raises `ValueError`) | |
+
+---
+
+## Stage 4: UAT & Admin UI
+
+### T-401: React + Vite + Tailwind + shadcn/ui Foundation
+
+| Pass | Test | Notes |
+|------|------|-------|
+| [ ] | `cd client && npm run build` completes without errors (TypeScript + Vite) | |
+| [ ] | `cd client && npm run dev` starts Vite dev server on port 4173 | |
+| [ ] | Navigate to `http://localhost:4173/` — Health page renders with sidebar | |
+| [ ] | Navigate to `http://localhost:4173/uat` — UAT Runner placeholder renders | |
+| [ ] | Navigate to `http://localhost:4173/admin` — Admin placeholder renders | |
+| [ ] | Sidebar shows Newton branding and three nav links (Health, UAT Runner, Admin) | |
+| [ ] | Active nav link is visually highlighted in sidebar | |
+| [ ] | Health page shows status cards (API Status, Database, Uptime, Generated) | |
+| [ ] | Health page shows Brokers table with Oanda/Binance connectivity status | |
+| [ ] | Health page shows Instruments table with candle age and reconciliation status | |
+| [ ] | Health page auto-refreshes every 10 seconds (watch "Last updated" timestamp) | |
+| [ ] | With API server stopped, Health page shows error message "API server unreachable" | |
+| [ ] | With API server running, Health page shows live data from `/api/v1/health` | |
+| [ ] | Dark mode renders correctly — dark background, light text, no contrast issues | |
+| [ ] | Vite proxy forwards `/api` requests to `localhost:8000` (no CORS errors) | |
