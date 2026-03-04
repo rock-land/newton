@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 10:00 | Stage 5 / T-502 | /ship T-502 | Shipped OandaAdapter — v0.5.2 |
+| 2026-03-04 09:30 | Stage 5 / T-502 | /task T-502 | Implement OandaAdapter in broker_oanda.py — Oanda v20 REST broker adapter |
 | 2026-03-04 09:00 | Stage 5 / T-501 | /ship T-501 | Shipped BrokerAdapter protocol and domain models — v0.5.1 |
 | 2026-03-04 08:30 | Stage 5 / T-501 | /task T-501 | Implement BrokerAdapter protocol and domain models in broker_base.py |
 | 2026-03-04 08:00 | Stage 5 / — | /stage-init | Initialized Stage 5: Trading Engine with 8 tasks + 1 gate |
