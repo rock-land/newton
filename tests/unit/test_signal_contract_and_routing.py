@@ -396,3 +396,196 @@ def test_batch_signal_without_thresholds_uses_defaults() -> None:
     _, signal = results[0]
     # 0.53 is NEUTRAL with default thresholds (buy > 0.55)
     assert signal.action == "NEUTRAL"
+
+
+# --- T-306: EnsembleV1Generator meta-learner integration ---
+
+
+class TestEnsembleMetaLearner:
+    """EnsembleV1Generator with and without meta-learner model."""
+
+    @staticmethod
+    def _trained_meta_learner_model() -> object:
+        from src.analysis.meta_learner import train_meta_learner
+        import numpy as np
+
+        rng = np.random.default_rng(42)
+        n = 300
+        labels_arr = rng.integers(0, 2, size=n).astype(int)
+        bayesian = np.where(labels_arr == 1, rng.uniform(0.6, 0.9, n), rng.uniform(0.1, 0.4, n))
+        ml = np.where(labels_arr == 1, rng.uniform(0.55, 0.85, n), rng.uniform(0.15, 0.45, n))
+        regime = rng.uniform(0.2, 0.8, n)
+        return train_meta_learner(
+            bayesian_posteriors=tuple(float(x) for x in bayesian),
+            ml_probabilities=tuple(float(x) for x in ml),
+            regime_confidences=tuple(float(x) for x in regime),
+            labels=tuple(int(x) for x in labels_arr),
+        )
+
+    def test_with_meta_learner_model_uses_meta_learner_path(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        model = self._trained_meta_learner_model()
+        gen = EnsembleV1Generator()
+        cfg = GeneratorConfig(
+            enabled=True,
+            parameters={"meta_learner_model": model, "weights": [0.6, 0.4]},
+        )
+        features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"bayesian_posterior": 0.75, "ml_probability": 0.80, "regime_confidence": 0.6},
+            metadata={},
+        )
+        signal = gen.generate("EUR_USD", features, cfg)
+        assert signal.metadata["source"] == "meta_learner"
+        assert 0.0 <= signal.probability <= 1.0
+
+    def test_without_meta_learner_model_uses_weighted_blend(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        cfg = GeneratorConfig(
+            enabled=True,
+            parameters={"weights": [0.6, 0.4]},
+        )
+        features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"bayesian_score": 0.7, "ml_score": 0.6},
+            metadata={},
+        )
+        signal = gen.generate("EUR_USD", features, cfg)
+        assert signal.metadata["source"] == "weighted_blend"
+        expected = 0.7 * 0.6 + 0.6 * 0.4
+        assert signal.probability == pytest.approx(expected)
+
+    def test_meta_learner_generate_batch_all_source_meta_learner(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        model = self._trained_meta_learner_model()
+        gen = EnsembleV1Generator()
+        cfg = GeneratorConfig(
+            enabled=True,
+            parameters={"meta_learner_model": model, "weights": [0.6, 0.4]},
+        )
+        snapshots = [
+            FeatureSnapshot(
+                instrument="EUR_USD",
+                interval="1h",
+                time=datetime(2026, 3, 4, h, 0, tzinfo=UTC),
+                values={"bayesian_posterior": 0.6 + h * 0.01, "ml_probability": 0.7, "regime_confidence": 0.5},
+                metadata={},
+            )
+            for h in range(5)
+        ]
+        results = gen.generate_batch("EUR_USD", snapshots, cfg)
+        assert len(results) == 5
+        for _, signal in results:
+            assert signal.metadata["source"] == "meta_learner"
+
+    def test_meta_learner_missing_feature_raises(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        model = self._trained_meta_learner_model()
+        gen = EnsembleV1Generator()
+        cfg = GeneratorConfig(
+            enabled=True,
+            parameters={"meta_learner_model": model, "weights": [0.6, 0.4]},
+        )
+        # Missing regime_confidence
+        features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"bayesian_posterior": 0.7, "ml_probability": 0.8},
+            metadata={},
+        )
+        with pytest.raises(RecoverableSignalError, match="regime_confidence"):
+            gen.generate("EUR_USD", features, cfg)
+
+    def test_meta_learner_high_inputs_higher_probability(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        model = self._trained_meta_learner_model()
+        gen = EnsembleV1Generator()
+        cfg = GeneratorConfig(
+            enabled=True,
+            parameters={"meta_learner_model": model, "weights": [0.6, 0.4]},
+        )
+        high_features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"bayesian_posterior": 0.85, "ml_probability": 0.85, "regime_confidence": 0.7},
+            metadata={},
+        )
+        low_features = FeatureSnapshot(
+            instrument="EUR_USD",
+            interval="1h",
+            time=datetime.now(tz=UTC),
+            values={"bayesian_posterior": 0.15, "ml_probability": 0.15, "regime_confidence": 0.3},
+            metadata={},
+        )
+        high_signal = gen.generate("EUR_USD", high_features, cfg)
+        low_signal = gen.generate("EUR_USD", low_features, cfg)
+        assert high_signal.probability > low_signal.probability
+
+
+# ---------------------------------------------------------------------------
+# validate_config (T-306-FIX2)
+# ---------------------------------------------------------------------------
+
+
+class TestValidateConfig:
+    """Generator validate_config methods check required parameters."""
+
+    def test_mlv1_validate_config_accepts_valid(self) -> None:
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({"model_bytes": b"data", "feature_names": ("f0",)}) is True
+
+    def test_mlv1_validate_config_accepts_scaffold(self) -> None:
+        """Scaffold mode (no model) is valid."""
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({}) is True
+
+    def test_mlv1_validate_config_rejects_partial(self) -> None:
+        """model_bytes without feature_names is invalid."""
+        from src.trading.signal import MLV1Generator
+
+        gen = MLV1Generator()
+        assert gen.validate_config({"model_bytes": b"data"}) is False
+
+    def test_ensemble_validate_config_accepts_meta_learner(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        # meta_learner_model present → valid
+        assert gen.validate_config({"meta_learner_model": "dummy", "weights": [0.6, 0.4]}) is True
+
+    def test_ensemble_validate_config_accepts_weighted_blend(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        assert gen.validate_config({"weights": [0.6, 0.4]}) is True
+
+    def test_ensemble_validate_config_rejects_bad_weights(self) -> None:
+        from src.trading.signal import EnsembleV1Generator
+
+        gen = EnsembleV1Generator()
+        # weights must be list of 2
+        assert gen.validate_config({"weights": [0.5]}) is False
+
+    def test_bayesian_validate_config_accepts_anything(self) -> None:
+        """BayesianV1 has optional model/rules — all dict configs are valid."""
+        from src.trading.signal import BayesianV1Generator
+
+        gen = BayesianV1Generator()
+        assert gen.validate_config({}) is True
+        assert gen.validate_config({"model": "x", "rules": []}) is True

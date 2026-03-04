@@ -14,7 +14,7 @@ Newton is a multi-stage trading system built with:
 - **Client** (Stage 6): Web UI for monitoring and control
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 2 complete (v0.2.8)** — Event Detection & Tokenization. Stage 3 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 3 complete (v0.3.10)** — ML Pipeline. Stage 4 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -30,16 +30,16 @@ Current status: **Stage 2 complete (v0.2.8)** — Event Detection & Tokenization
 │  (FastAPI: /api/v1/health, /ohlcv, /features, /signal)      │
 └─────────────────────────────────────────────────────────────┘
                               │
-          ┌───────────────────┼───────────────────┐
-          ▼                   ▼                   ▼
-   ┌────────────┐     ┌────────────┐     ┌────────────┐
-   │  Data      │     │  Event     │     │  Trading   │
-   │  Pipeline  │     │  Detection │     │  Engine    │
-   │            │     │            │     │            │
-   │ - Fetchers │     │ - Events   │     │ - Risk     │
-   │ - Indicators│     │ - Tokens  │     │ - Executor │
-   │ - Verifier │     │ - Bayesian│     │ - Brokers  │
-   └────────────┘     └────────────┘     └────────────┘
+          ┌──────────────┬──────────────┬──────────────┐
+          ▼              ▼              ▼              ▼
+   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+   │  Data      │ │  Event     │ │ ML Pipeline│ │  Trading   │
+   │  Pipeline  │ │  Detection │ │            │ │  Engine    │
+   │            │ │            │ │ - Features │ │            │
+   │ - Fetchers │ │ - Events   │ │ - XGBoost  │ │ - Risk     │
+   │ - Indicators│ │ - Tokens  │ │ - Regime   │ │ - Executor │
+   │ - Verifier │ │ - Bayesian│ │ - Ensemble │ │ - Brokers  │
+   └────────────┘ └────────────┘ └────────────┘ └────────────┘
           │
           ▼
    ┌────────────────────────────────────────────────┐
@@ -190,7 +190,8 @@ Newton uses `0.{STAGE}.{TASK}` versioning:
 
 - `0.1.5` = Stage 1 complete
 - `0.2.8` = Stage 2 complete
-- Fix releases: `0.2.7` = Stage 2, fix task shipped
+- `0.3.10` = Stage 3 complete
+- Fix releases: `0.3.9` = Stage 3, fix task shipped
 
 See [CHANGELOG](./CHANGELOG.md) for release history.
 

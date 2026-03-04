@@ -5,6 +5,27 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-04 21:00 | Stage 3 / T-3G | /ship T-3G | Shipped Stage 3 gate — v0.3.10, merged to main |
+| 2026-03-04 20:30 | Stage 3 / T-3G | /task T-3G | Stage gate validation — all criteria pass, quality gate PASS (397 tests, 92% coverage) |
+| 2026-03-04 20:00 | Stage 3 / FIX tasks | /verify-fixes | Verified 3 fix tasks (T-306-FIX1/FIX2/FIX3): PASS — all 7 findings resolved, no regressions |
+| 2026-03-04 19:30 | Stage 3 / FIX tasks | /ship T-306-FIX1 | Shipped fix batch (T-306-FIX1/FIX2/FIX3) — v0.3.9 |
+| 2026-03-04 19:00 | Stage 3 / FIX tasks | /task | Fix task batch: T-306-FIX1 + T-306-FIX2 + T-306-FIX3 — guard non-positive prices, NaN defaults, AUC enforcement, validate_config, held-out calibration, XGBoost caching, path sanitization |
+| 2026-03-04 18:30 | Stage 3 / — | /stage-report | Compiled stage report: NOT READY — 3 FIX tasks added (T-306-FIX1, T-306-FIX2, T-306-FIX3) |
+| 2026-03-04 18:00 | Stage 3 / — | /red-review | Red team review completed: Conditional Pass (2 critical, 5 high) |
+| 2026-03-04 17:30 | Stage 3 / — | /review | Code review completed: Ready for merge |
+| 2026-03-04 17:00 | Stage 3 / T-306 | /ship T-306 | Shipped meta-learner and EnsembleV1Generator rewrite — v0.3.6 |
+| 2026-03-04 16:30 | Stage 3 / T-306 | /task T-306 | Meta-learner and EnsembleV1Generator rewrite — logistic regression stacking, calibration, ensemble integration |
+| 2026-03-04 16:00 | Stage 3 / T-305 | /ship T-305 | Shipped regime detection subsystem — v0.3.5 |
+| 2026-03-04 15:30 | Stage 3 / T-305 | /task T-305 | Regime detection subsystem — vol_30d, ADX_14, regime classification, confidence formula |
+| 2026-03-04 15:00 | Stage 3 / T-304 | /ship T-304 | Shipped XGBoost model training and MLV1Generator — v0.3.4 |
+| 2026-03-04 14:30 | Stage 3 / T-304 | /task T-304 | XGBoost model training and MLV1Generator — walk-forward training, Optuna HPO, real inference |
+| 2026-03-04 14:00 | Stage 3 / T-303 | /ship T-303 | Shipped walk-forward training framework — v0.3.3 |
+| 2026-03-04 13:30 | Stage 3 / T-303 | /task T-303 | Walk-forward training framework — cross-validation with embargo, fold metrics, OOF predictions |
+| 2026-03-04 13:00 | Stage 3 / T-302 | /ship T-302 | Shipped model artifact storage and versioning — v0.3.2 |
+| 2026-03-04 12:30 | Stage 3 / T-302 | /task T-302 | Model artifact storage and versioning — save/load with SHA-256 integrity |
+| 2026-03-04 12:00 | Stage 3 / T-301 | /ship T-301 | Shipped feature engineering pipeline — v0.3.1 |
+| 2026-03-04 11:30 | Stage 3 / T-301 | /task T-301 | Feature engineering pipeline — OHLCV returns, indicator features, token flags |
+| 2026-03-04 11:00 | Stage 3 / — | /stage-init | Initialized Stage 3: ML Pipeline with 6 tasks |
 | 2026-03-04 10:45 | Stage 2 / T-2G | /ship T-2G | Shipped Stage 2 gate — v0.2.8, merged to main |
 | 2026-03-04 10:30 | Stage 2 / T-2G | /task T-2G | Stage gate validation — all criteria pass, quality gate PASS (225 tests, 89% coverage) |
 | 2026-03-04 10:15 | Stage 2 / T-206-FIX1 | /ship T-206-FIX1 | Shipped fix for close fallback and threshold inconsistencies — v0.2.7 |

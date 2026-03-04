@@ -13,6 +13,35 @@ Each stage gets a version entry summarizing all work completed in that stage.
 Categories: Added, Changed, Deprecated, Removed, Fixed, Security
 -->
 
+## [0.3.10] - 2026-03-04
+
+### Added
+- Feature engineering pipeline (`src/analysis/feature_engineering.py`) — OHLCV return features, indicator lag features, token presence flags with configurable lookback window (T-301)
+- Model artifact storage and versioning (`src/analysis/model_store.py`) — save/load with SHA-256 integrity verification, version tracking per instrument/model_type (T-302)
+- Walk-forward training framework (`src/analysis/walk_forward.py`) — rolling window cross-validation with configurable train/test/step sizes, 48-hour embargo, minimum 4 folds, OOF prediction collection (T-303)
+- XGBoost model training (`src/analysis/xgboost_trainer.py`) — walk-forward training with Optuna hyperparameter optimization, early stopping, AUC-ROC evaluation (T-304)
+- Regime detection subsystem (`src/regime/detector.py`) — `vol_30d` annualized realized volatility, `ADX_14`, 4-regime classification, deterministic confidence formula with HIGH/MEDIUM/LOW bands (T-305)
+- Meta-learner (`src/analysis/meta_learner.py`) — logistic regression stacking of Bayesian posterior, ML probability, and regime confidence with decile calibration evaluation (T-306)
+- Path sanitization in model store — regex validation `^[A-Za-z0-9_-]+$` for instrument and model_type to prevent directory traversal (T-306-FIX3)
+- XGBoost booster deserialization cache via `functools.lru_cache` to avoid redundant per-call deserialization (T-306-FIX3)
+- 172 new tests (225 → 397), coverage 89% → 92%
+
+### Changed
+- `MLV1Generator` rewritten from scaffold to real XGBoost inference: load model → feature vector → predict → Signal (T-304)
+- `EnsembleV1Generator` rewritten to use meta-learner stacking with fallback to weighted blend when untrained (T-306)
+- Feature engineering uses `NaN` for missing indicator/return values instead of `0.0` — XGBoost handles NaN natively (T-306-FIX1)
+- `train_meta_learner()` evaluates calibration on held-out 20% split instead of training data (T-306-FIX2)
+- `MLV1Generator.validate_config()` and `EnsembleV1Generator.validate_config()` now check required parameter keys (T-306-FIX2)
+
+### Fixed
+- `compute_vol_30d()` now raises `ValueError` for non-positive prices (log undefined) (T-306-FIX1)
+- `train_xgboost()` returns `None` for `production_model_bytes` when AUC below threshold per SPEC §5.6 (T-306-FIX2)
+- Calibration metric was evaluated on training data instead of held-out split (T-306-FIX2)
+- `validate_config()` base implementations always returned `True` without checking required keys (T-306-FIX2)
+
+### Security
+- Model store path traversal prevention — rejects `../`, slashes, and special characters in instrument/model_type names (T-306-FIX3)
+
 ## [0.2.8] - 2026-03-04
 
 ### Added

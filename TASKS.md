@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.2.8` (Stage 2 complete)
-**Latest Release:** `0.2.8` (Stage 2 complete)
+**Current Version:** `0.3.10` (Stage 3 complete)
+**Latest Release:** `0.3.10` (Stage 3 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -14,6 +14,8 @@ Status: Active
 | 0.1.5 | 1 | Stage 1 complete |
 | 0.2.0 | 2 | Stage 2 start |
 | 0.2.8 | 2 | Stage 2 complete |
+| 0.3.0 | 3 | Stage 3 start |
+| 0.3.10 | 3 | Stage 3 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -96,6 +98,25 @@ The following work was completed before governance was established. This is not 
 
 ---
 
+## Stage 3: ML Pipeline
+
+**Branch:** `stage/3-ml-pipeline`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-301 | Feature engineering pipeline for ML training and inference | server | `src/analysis/feature_engineering.py` implemented; builds feature vectors from OHLCV returns (not raw prices), indicator features from feature store, and token presence flags; rolling window of N periods (configurable, default 24 per strategy `ml_model.lookback_periods`); feature matrix output for XGBoost training; single-row feature vector for inference from FeatureSnapshot; tests with synthetic data verify feature construction, window handling, and return calculation | DONE |
+| T-302 | Model artifact storage and versioning | server | `src/analysis/model_store.py` implemented; save/load model artifacts to disk with SHA-256 hash verification; `ModelArtifact` frozen dataclass with type, instrument, training date, hyperparameters, performance metrics, data hash; version tracking per instrument (monotonically incrementing); integrity verification on load (hash mismatch raises error); storage directory configurable (default `models/`); tests for save/load/verify cycle, corruption detection, version incrementing | DONE |
+| T-303 | Walk-forward training framework | server | `src/analysis/walk_forward.py` implemented; walk-forward cross-validation with configurable train/test window sizes; default 2-year train, 6-month test, 6-month step per SPEC §9.1; 48-hour embargo between train and test sets; minimum 4 folds; per-fold metric collection (AUC-ROC); out-of-fold prediction collection for meta-learner training; no look-ahead guarantee; tests with synthetic data verify fold boundaries, embargo enforcement, and no look-ahead | DONE |
+| T-304 | XGBoost model training and MLV1Generator | server | XGBoost training using walk-forward framework (T-303); Optuna hyperparameter search within training windows only; early stopping on validation loss; `MLV1Generator` in `src/trading/signal.py` rewritten from scaffold to real inference (load model → FeatureSnapshot → feature vector → predict → Signal); walk-forward AUC-ROC > 0.55 per instrument (if below, log warning and set `metadata.below_auc_threshold`); CNN-LSTM deferred unless XGBoost fails threshold; tests for model train/predict cycle, generator protocol compliance, AUC evaluation | DONE |
+| T-305 | Regime detection subsystem | server | `src/regime/detector.py` rewritten from scaffold; `vol_30d` annualized realized volatility (√252 forex, √365 crypto); `ADX_14` 14-day ADX; `vol_median` 2-year rolling window recalculated monthly; 4 regime labels per SPEC §5.8.2; deterministic confidence formula `sqrt(clamp(d_vol) × clamp(d_adx))`; confidence bands HIGH (≥0.5) / MEDIUM (0.2–0.5) / LOW (<0.2); `RegimeState` frozen dataclass; tests for regime classification, confidence calculation, vol_median update | DONE |
+| T-306 | Meta-learner and EnsembleV1Generator rewrite | server | `src/analysis/meta_learner.py` rewritten from scaffold to logistic regression stacking; inputs: Bayesian posterior, ML probability, regime confidence; trained on out-of-fold walk-forward predictions; calibration < 5pp per decile; `EnsembleV1Generator` in `src/trading/signal.py` rewritten to use meta-learner (fallback to weighted blend when untrained); signal interpretation per strategy thresholds; tests for meta-learner training, calibration, ensemble with and without meta-learner | DONE |
+| T-306-FIX1 | Guard non-positive prices in regime detection and use NaN for missing indicator values | server | `compute_vol_30d()` raises `ValueError` when any close price ≤ 0; `_extract_row()` in feature_engineering.py uses `float('nan')` instead of `0.0` for missing indicator/return values (XGBoost handles NaN natively); tests added for zero/negative price guard and NaN propagation; quality gate passes | DONE |
+| T-306-FIX2 | Enforce AUC threshold, implement validate_config, and evaluate calibration on held-out data | server | `train_xgboost()` returns `None` for `production_model_bytes` when AUC below threshold (SPEC §5.6 compliance); `MLV1Generator.validate_config()` and `EnsembleV1Generator.validate_config()` check required parameter keys; `train_meta_learner()` evaluates calibration on held-out split (not training data); tests added for AUC enforcement, config validation, and held-out calibration; quality gate passes | DONE |
+| T-306-FIX3 | Cache XGBoost deserialization and add path sanitization to model store | server | `predict_xgboost()` accepts pre-deserialized booster or caches deserialized model to avoid redundant per-call deserialization; `model_store.py` validates `instrument` and `model_type` against `^[A-Za-z0-9_-]+$` regex, raises `ValueError` on path traversal attempts; tests added for caching behavior and path sanitization; quality gate passes | DONE |
+| T-3G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; all T-3xx tasks DONE | DONE |
+
+---
+
 ## Backlog
 
 <!--
@@ -105,8 +126,6 @@ during /stage-init, NOT in advance. Keep entries lightweight.
 
 | Stage | Name | Summary |
 |-------|------|---------|
-| 2 | Event Detection & Tokenization | Indicator event detection, token generation, Bayesian scoring (SPEC §5) |
-| 3 | ML Pipeline | Feature engineering, XGBoost training, model evaluation, stacking meta-learner (SPEC §5.4-5.5) |
 | 4 | Trading Engine | Broker adapters, risk management, order execution, reconciliation, circuit breakers (SPEC §6) |
 | 5 | Backtesting | Walk-forward validation, purged K-fold CV, performance metrics, reporting (SPEC §9) |
 | 6 | Client Web UI | Health panel, data viewer, signal display, trade monitoring (SPEC §8) |

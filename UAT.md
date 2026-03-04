@@ -77,3 +77,144 @@ Format: checkbox | test description | notes
 | [ ] | `generate_batch()` with thresholds in `config.parameters` uses those thresholds for action computation | |
 | [ ] | `generate_batch()` without thresholds in `config.parameters` uses default thresholds (backward compatible) | |
 | [ ] | `DECISIONS.md` contains DEC-014 documenting event labeling high-watermark approach | |
+
+## Stage 3: ML Pipeline
+
+### T-301: Feature Engineering Pipeline
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `build_feature_matrix()` produces a matrix with OHLCV return columns (`ohlcv:*:lag=N`), indicator columns (`ind:*:lag=N`), and token flag columns (`tok:*`) | |
+| [ ] | OHLCV returns use period-over-period returns (not raw prices) — verified against hand-calculated values | |
+| [ ] | Lookback window is configurable and defaults to 24 (from strategy `ml_model.lookback_periods`) | |
+| [ ] | Token presence flags are binary (0.0 or 1.0) and reflect current-period token activation | |
+| [ ] | `build_feature_vector()` for a given timestamp produces the same values as the corresponding row in `build_feature_matrix()` | |
+| [ ] | Insufficient history for lookback window produces empty matrix (training) or raises ValueError (inference) | |
+| [ ] | Zero-volume candles handled safely (no division-by-zero errors) | |
+
+### T-302: Model Artifact Storage and Versioning
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `save_model()` writes model file and `.meta.json` sidecar to `{base_dir}/{instrument}/{model_type}/v{N}.model` | |
+| [ ] | `save_model()` computes SHA-256 hash of model bytes and stores it in metadata | |
+| [ ] | `load_model()` round-trips: saved bytes and metadata match loaded bytes and metadata | |
+| [ ] | `load_model()` with corrupted model file raises `ModelIntegrityError` (hash mismatch) | |
+| [ ] | `load_model()` with `version=None` loads the latest version | |
+| [ ] | `load_model()` for missing model file raises `FileNotFoundError` | |
+| [ ] | `get_latest_version()` returns 0 when no versions exist | |
+| [ ] | `get_latest_version()` returns highest version number after multiple saves | |
+| [ ] | `list_versions()` returns all version metadata sorted ascending by version | |
+| [ ] | `ModelArtifact` is frozen (attribute assignment raises `AttributeError`) | |
+
+### T-303: Walk-Forward Training Framework
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `generate_folds()` produces at least `min_folds` folds with correct train/test boundaries | |
+| [ ] | Embargo gap between train_end and test_start equals `embargo_periods` for every fold | |
+| [ ] | Each fold's train_start advances by `step_periods` (rolling window) | |
+| [ ] | Consecutive test sets are non-overlapping | |
+| [ ] | All fold indices are within `[0, n_samples)` bounds | |
+| [ ] | `generate_folds()` with insufficient data raises `ValueError` | |
+| [ ] | `validate_no_lookahead()` passes for well-formed folds and raises `ValueError` for violations | |
+| [ ] | `collect_results()` concatenates OOF predictions, labels, and timestamps from all folds | |
+| [ ] | `collect_results()` computes mean AUC-ROC as average of per-fold AUC-ROC values | |
+| [ ] | All dataclasses (`WalkForwardConfig`, `WalkForwardFold`, `FoldResult`, `WalkForwardResult`) are frozen | |
+
+### T-304: XGBoost Model Training and MLV1Generator
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `train_xgboost()` with synthetic feature matrix returns `TrainingResult` with populated `production_model_bytes` and `production_hyperparameters` | |
+| [ ] | Walk-forward folds are populated (≥2 folds, OOF predictions and labels non-empty) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.99` sets `below_auc_threshold=True` | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.0` sets `below_auc_threshold=False` | |
+| [ ] | Production model from `train_xgboost()` can predict via `predict_xgboost()` — returns probability in [0, 1] | |
+| [ ] | All OOF predictions are in [0.0, 1.0] range | |
+| [ ] | Optimized hyperparameters are in valid ranges (max_depth 3-10, learning_rate 0.01-0.3, etc.) | |
+| [ ] | `predict_xgboost()` round-trip: train model → serialize → predict returns valid probability | |
+| [ ] | `predict_xgboost()` with different inputs produces different probabilities | |
+| [ ] | `MLV1Generator` with `model_bytes` and `feature_names` in config uses real XGBoost inference (`metadata.source = "xgboost_engine"`) | |
+| [ ] | `MLV1Generator` without model in config falls back to scaffold behavior (`metadata.source = "scaffold"`) | |
+| [ ] | `MLV1Generator` with model but missing feature in `features.values` raises `RecoverableSignalError` | |
+| [ ] | `MLV1Generator.generate_batch()` with model returns signals with `source: "xgboost_engine"` for all snapshots | |
+| [ ] | `XGBoostHyperparameters` and `TrainingResult` dataclasses are frozen | |
+| [ ] | Training is reproducible with the same `random_seed` | |
+
+### T-305: Regime Detection Subsystem
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `RegimeLabel` enum has exactly 4 values: `LOW_VOL_TRENDING`, `LOW_VOL_RANGING`, `HIGH_VOL_TRENDING`, `HIGH_VOL_RANGING` | |
+| [ ] | `ConfidenceBand` enum has exactly 3 values: `HIGH`, `MEDIUM`, `LOW` | |
+| [ ] | `RegimeState` is frozen (attribute assignment raises `AttributeError`) | |
+| [ ] | `compute_vol_30d()` with constant prices returns 0.0 | |
+| [ ] | `compute_vol_30d()` with forex annualization (√252) produces lower vol than crypto (√365) for same returns | |
+| [ ] | `compute_vol_30d()` with fewer than 2 closes raises `ValueError` | |
+| [ ] | `compute_adx_14()` with strong trending data returns ADX > 25 | |
+| [ ] | `compute_adx_14()` with ranging/oscillating data returns ADX < 25 | |
+| [ ] | `compute_adx_14()` with fewer than 28 bars raises `ValueError` | |
+| [ ] | `compute_adx_14()` returns value in [0, 100] range | |
+| [ ] | `compute_vol_median()` returns correct median of input series | |
+| [ ] | `compute_vol_median()` with empty list raises `ValueError` | |
+| [ ] | `classify_regime()` returns `LOW_VOL_TRENDING` when vol_30d < vol_median AND ADX > 25 | |
+| [ ] | `classify_regime()` returns `HIGH_VOL_RANGING` when vol_30d ≥ vol_median AND ADX ≤ 25 | |
+| [ ] | `classify_regime()` boundary: vol_30d == vol_median classifies as HIGH_VOL (≥ condition) | |
+| [ ] | `classify_regime()` boundary: ADX == 25 classifies as RANGING (≤ condition) | |
+| [ ] | `compute_confidence()` matches SPEC §5.8.3 formula: `sqrt(clamp(d_vol) × clamp(d_adx))` | |
+| [ ] | `compute_confidence()` with vol_median=0 returns (0.0, LOW) — no division-by-zero crash | |
+| [ ] | Confidence ≥ 0.5 → HIGH band; 0.2–0.5 → MEDIUM band; < 0.2 → LOW band | |
+| [ ] | `detect_regime()` end-to-end with trending candle data returns `RegimeState` with ADX > 25 | |
+| [ ] | `detect_regime()` end-to-end with ranging candle data returns valid `RegimeState` | |
+| [ ] | Pure Python ADX fallback produces results in the same ballpark as TA-Lib ADX | |
+
+### T-306: Meta-Learner and EnsembleV1Generator
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `MetaLearnerModel` is frozen (attribute assignment raises `AttributeError`) | |
+| [ ] | `MetaLearnerModel` has fields: `coefficients`, `intercept`, `feature_names`, `calibration_errors`, `n_training_samples` | |
+| [ ] | `train_meta_learner()` with separable synthetic data returns `MetaLearnerModel` with 3 coefficients | |
+| [ ] | `train_meta_learner()` bayesian and ML coefficients are positive (informative inputs) | |
+| [ ] | `train_meta_learner()` with fewer than `min_samples` raises `ValueError` | |
+| [ ] | `train_meta_learner()` default `min_samples` is 100 — 99 samples raises `ValueError` | |
+| [ ] | `train_meta_learner()` with exactly 100 samples succeeds | |
+| [ ] | `predict_meta_learner()` returns probability in [0, 1] | |
+| [ ] | `predict_meta_learner()` with high bayesian+ml inputs returns higher probability than low inputs | |
+| [ ] | `predict_meta_learner()` with different inputs produces different outputs | |
+| [ ] | `predict_meta_learner()` with all-zero inputs returns valid probability in [0, 1] | |
+| [ ] | `predict_meta_learner()` with all-one inputs returns valid probability in [0, 1] | |
+| [ ] | `compute_calibration_error()` returns 10-element tuple (one per decile) | |
+| [ ] | `compute_calibration_error()` with well-calibrated data returns errors < 0.10 per decile | |
+| [ ] | `compute_calibration_error()` with poorly calibrated data (predict 0.95, observe 50%) returns high error in 0.9-1.0 bin | |
+| [ ] | `compute_calibration_error()` empty bins get 0.0 error | |
+| [ ] | `check_calibration()` returns True when all decile errors < 5pp | |
+| [ ] | `check_calibration()` returns False when any decile error ≥ 5pp | |
+| [ ] | `check_calibration()` with error exactly at 5pp (0.05) returns False (strict < threshold) | |
+| [ ] | `check_calibration()` with custom `max_error_pp` threshold works correctly | |
+| [ ] | `EnsembleV1Generator` with `meta_learner_model` in config uses meta-learner path (`metadata.source = "meta_learner"`) | |
+| [ ] | `EnsembleV1Generator` without `meta_learner_model` in config falls back to weighted blend (`metadata.source = "weighted_blend"`) | |
+| [ ] | `EnsembleV1Generator` with meta-learner: high bayesian+ml inputs produce higher probability than low inputs | |
+| [ ] | `EnsembleV1Generator.generate_batch()` with meta-learner model returns all signals with `source: "meta_learner"` | |
+| [ ] | `EnsembleV1Generator` with meta-learner but missing `regime_confidence` feature raises `RecoverableSignalError` | |
+| [ ] | End-to-end: train meta-learner → predict → EnsembleV1Generator produces valid signal with calibrated probability | |
+
+### T-306-FIX1/FIX2/FIX3: Remediation Fixes
+
+| Status | Test | Notes |
+|--------|------|-------|
+| [ ] | `compute_vol_30d()` with zero price in closes raises `ValueError` (non-positive guard) | |
+| [ ] | `compute_vol_30d()` with negative price in closes raises `ValueError` | |
+| [ ] | Missing indicator values in feature matrix produce `NaN` (not `0.0`) — XGBoost handles natively | |
+| [ ] | Missing OHLCV return values in feature vector produce `NaN` (not `0.0`) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.99` returns `production_model_bytes=None` (ML disabled per SPEC §5.6) | |
+| [ ] | `train_xgboost()` with `auc_threshold=0.0` returns `production_model_bytes` with data (ML enabled) | |
+| [ ] | `MLV1Generator.validate_config()` returns `True` for valid config (both `model_bytes` and `feature_names`) | |
+| [ ] | `MLV1Generator.validate_config()` returns `False` for partial config (`model_bytes` without `feature_names`) | |
+| [ ] | `EnsembleV1Generator.validate_config()` returns `False` for invalid weights (single-element list) | |
+| [ ] | `train_meta_learner()` `n_training_samples` is 80% of input (train/held-out split for calibration) | |
+| [ ] | `predict_xgboost()` caches deserialized booster — second call with same bytes reuses object | |
+| [ ] | `model_store` rejects path traversal in instrument name (`../etc` raises `ValueError`) | |
+| [ ] | `model_store` rejects path traversal in model_type (`../../passwd` raises `ValueError`) | |
+| [ ] | `model_store` rejects slash in instrument name (`foo/bar` raises `ValueError`) | |
