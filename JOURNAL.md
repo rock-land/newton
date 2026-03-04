@@ -5,6 +5,9 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 07:00 | Stage 4 / T-4G | /ship T-4G | Shipped Stage 4 gate — v0.4.8, merged to main |
+| 2026-03-05 06:30 | Stage 4 / T-4G | /task T-4G | Stage gate validation — all criteria pass |
+| 2026-03-05 06:00 | Stage 4 / FIX tasks | /verify-fixes | Verified 2 fix tasks (T-405-FIX1/FIX2): PASS — all 10 findings resolved, no regressions |
 | 2026-03-05 05:30 | Stage 4 / FIX tasks | /ship T-405-FIX1 | Shipped fix batch (T-405-FIX1/FIX2) — v0.4.6 |
 | 2026-03-05 05:00 | Stage 4 / FIX tasks | /task | Fix task batch: T-405-FIX1 + T-405-FIX2 — sanitize API errors, input validation, client contract fixes, version sync |
 | 2026-03-05 04:30 | Stage 4 / — | /stage-report | Compiled stage report: NOT READY — 2 FIX tasks added (T-405-FIX1, T-405-FIX2) |

@@ -17,6 +17,7 @@ Status: Active
 | 0.3.0 | 3 | Stage 3 start |
 | 0.3.10 | 3 | Stage 3 complete |
 | 0.4.0 | 4 | Stage 4 start |
+| 0.4.8 | 4 | Stage 4 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -131,7 +132,7 @@ The following work was completed before governance was established. This is not 
 | T-405 | Refresh UAT.md with practical test plan | docs | Rewrite UAT.md with human-verifiable items; each item maps to automated test (suite:test_id) or interactive panel (page + what to look for); remove pure unit-test items covered by pytest; add verification instructions for each panel | DONE |
 | T-405-FIX1 | Sanitize API error responses and add input validation | server | All `HTTPException(500)` in `data.py` use generic messages (no `{exc}` interpolation); `models.py` validates `model_type` against `_MODEL_TYPES` with 400 on invalid; `data.py` validates `instrument` on `get_ohlcv`, `get_features`, `compute_features`; `compute_features` has a row limit (≤50,000); `regime.py` wraps computation in try/except with `_unknown_regime` fallback; quality gate passes | DONE |
 | T-405-FIX2 | Fix client API contract and app version | fullstack | `api.ts` `ohlcv()` requires `interval` and `start` params matching server; `app.py` reads version from `VERSION` file; `regime.py` step size corrected or comment fixed; React Fragment key added in ModelDashboard; `class="dark"` added to `index.html`; quality gate passes | DONE |
-| T-4G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; `cd client && npm run build` PASS; all T-4xx tasks DONE | TODO |
+| T-4G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS with ≥80% coverage; `cd client && npm run build` PASS; all T-4xx tasks DONE | DONE |
 
 ---
 

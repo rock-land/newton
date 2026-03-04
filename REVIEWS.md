@@ -1075,8 +1075,8 @@ Ready for merge with conditions — 2 critical findings (path traversal, info le
 ### Stage Report
 
 - **Date:** 2026-03-05
-- **Status:** PENDING
-- **Sign-off:** —
+- **Status:** APPROVED
+- **Sign-off:** 2026-03-05
 
 #### Quality Gate Summary
 - lint: PASS
@@ -1169,3 +1169,36 @@ None — reviews are consistent. Both reviews identified the exception message l
 #### Verdict
 
 **NOT READY** — 2 critical findings (exception leakage, unvalidated model_type) and 4 high findings (unbounded compute, broken OHLCV client, version mismatch, regime error handling) require remediation. Two FIX tasks have been drafted to address all critical + high findings plus the most impactful medium items. The codebase is architecturally sound with strong security fundamentals — issues are localized to the API integration layer and are straightforward to fix.
+
+### Fix Verification
+
+- **Date:** 2026-03-05
+- **Status:** PASS
+
+#### Verified Fixes
+
+| Fix Task | Original Finding | Status | Notes |
+|---|---|---|---|
+| T-405-FIX1 | SR-C1 (exception leakage) | PASS | All 4 `HTTPException(500)` in `data.py` (lines 209, 261, 326, 438) now use generic messages. `logger.exception` logs full details server-side. Verified: no `{exc}` interpolation remains in any HTTP error detail. |
+| T-405-FIX1 | SR-C2 (model_type validation) | PASS | `models.py:45-49` validates `model_type` against `_MODEL_TYPES` with 400 error. Test `test_models_endpoint_rejects_invalid_model_type` confirms. |
+| T-405-FIX1 | SR-C2 (instrument validation) | PASS | `data.py:27-32` adds `_SUPPORTED_INSTRUMENTS` set and `_validate_instrument()` helper. Called at lines 184, 295, 365 for `get_ohlcv`, `get_features`, `compute_features`. Tests confirm 400 on unsupported instruments. |
+| T-405-FIX1 | SR-H1 (unbounded compute) | PASS | `data.py:388` adds `LIMIT 50000` to the compute_features OHLCV query. |
+| T-405-FIX1 | SR-H4 (regime error handling) | PASS | `regime.py:92-97` wraps `compute_vol_30d`/`compute_adx_14` in `try/except (ValueError, ZeroDivisionError)` returning `_unknown_regime` fallback. Test `test_regime_computation_error_returns_unknown` confirms. |
+| T-405-FIX2 | SR-H2 (broken OHLCV client) | PASS | `api.ts:222-231` now requires `interval: string` and `start: string` as mandatory params in `ohlcv()` signature. `params` object is non-optional. |
+| T-405-FIX2 | SR-H3 (version mismatch) | PASS | `app.py:13-14` reads `VERSION` file dynamically. `app.py:18` uses `_app_version`. Tests `test_app_version_matches_version_file` and `test_openapi_version_matches` confirm version matches `VERSION` file. |
+| T-405-FIX2 | SR-H4 (regime step comment) | PASS | `regime.py:137` comment corrected from "20 trading days" to "~20 bars for rolling window sampling". |
+| T-405-FIX2 | SR-M1 (Fragment key) | PASS | `AdminPage.tsx:1` imports `Fragment`; line 687 uses `<Fragment key={key}>` instead of bare `<>`. |
+| T-405-FIX2 | SR-M3 (dark class) | PASS | `index.html:2` has `<html lang="en" class="dark">`. |
+
+#### Quality Gate
+- lint: PASS
+- types: PASS
+- tests: PASS — 441 passed (12 new), 93% coverage
+
+#### New Issues Found
+None — fixes are clean. No regressions detected. All 429 previously passing tests still pass. 12 new tests added covering validation and error handling paths.
+
+#### Verdict
+**PASS**
+
+All 10 findings across both FIX tasks are resolved. Error messages are sanitized, input validation is consistent across all API endpoints, client contract matches server, app version is dynamic, and regime computation has proper error handling. The stage can proceed to gate approval.

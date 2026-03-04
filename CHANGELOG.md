@@ -13,6 +13,37 @@ Each stage gets a version entry summarizing all work completed in that stage.
 Categories: Added, Changed, Deprecated, Removed, Fixed, Security
 -->
 
+## [0.4.8] - 2026-03-05
+
+### Added
+- React + Vite + Tailwind + shadcn/ui client foundation (`client/`) — sidebar nav, API layer, health dashboard with auto-refresh, error boundary (T-401)
+- UAT test API endpoints (`src/uat/`) — 28 behavioral tests across 7 suites (Data Pipeline, Event Detection, Bayesian, ML Training, Regime, Ensemble, End-to-End) with synthetic data (T-402)
+- UAT Runner UI (`client/src/pages/UATPage.tsx`) — suite cards, Run All/Run Suite, results table with expandable details, re-run individual tests, loading states (T-403)
+- Interactive admin panels (`client/src/pages/AdminPage.tsx`) — Feature Explorer (compute + load + pivoted table), Signal Inspector (generator selection + signal card + component scores + metadata), Regime Monitor (auto-load both instruments), Model Dashboard (version history + expandable details) (T-404)
+- Practical UAT.md test plan — human-verifiable items mapped to automated tests and interactive panels across 7 sections (T-405)
+- DEC-015 decision record for client UI stack (React 18 + TypeScript + Vite + Tailwind + shadcn/ui) (T-401)
+- API endpoints for regime detection (`/api/v1/regime/{instrument}`), model listing (`/api/v1/models/{instrument}`), and feature computation (`POST /api/v1/features/compute`) (T-404)
+- Instrument validation on all data endpoints (`get_ohlcv`, `get_features`, `compute_features`) with 400 on unsupported instruments (T-405-FIX1)
+- `model_type` query parameter validation against allowed list with 400 on invalid (T-405-FIX1)
+- Row limit (50,000) on `compute_features` OHLCV query to prevent memory exhaustion (T-405-FIX1)
+- Regime computation try/except with `_unknown_regime` fallback on ValueError/ZeroDivisionError (T-405-FIX1)
+- 12 new tests for API validation and error handling paths (T-405-FIX1, T-405-FIX2)
+- 216 new tests (225 → 441), coverage 89% → 93%
+
+### Changed
+- `app.py` reads version dynamically from `VERSION` file instead of hardcoded `"0.1.0"` (T-405-FIX2)
+- Client `ohlcv()` function now requires `interval` and `start` params matching server contract (T-405-FIX2)
+- Regime rolling vol step comment corrected from "20 trading days" to "~20 bars" (T-405-FIX2)
+- `dark` class added to `<html>` element for shadcn/ui dark mode variant activation (T-405-FIX2)
+- React Fragment with key replaces bare `<>` in ModelDashboard list rendering (T-405-FIX2)
+
+### Fixed
+- HTTP 500 error messages no longer leak exception details (connection strings, SQL fragments) — all 4 data.py endpoints use generic messages with server-side logging (T-405-FIX1)
+
+### Security
+- API error response sanitization — database exceptions no longer exposed to clients per SPEC §7.3 and §10.1 (T-405-FIX1)
+- Defense-in-depth input validation at API boundary for `model_type` and `instrument` parameters (T-405-FIX1)
+
 ## [0.3.10] - 2026-03-04
 
 ### Added
