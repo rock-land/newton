@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 04:00 | Stage 6 / T-601 | /ship T-601 | Shipped trade simulation engine — v0.6.1 |
+| 2026-03-06 03:30 | Stage 6 / T-601 | /task T-601 | Implement trade simulation engine in simulator.py |
 | 2026-03-06 03:00 | Stage 6 / — | /stage-init | Initialized Stage 6: Backtesting with 8 tasks + 1 gate |
 | 2026-03-06 02:30 | Stage 5 / T-5G | /ship T-5G | Shipped stage gate — v0.5.12, merged to main, tagged |
 | 2026-03-06 02:00 | Stage 5 / T-5G | /task T-5G | Stage gate: quality gate validation for Stage 5 |
