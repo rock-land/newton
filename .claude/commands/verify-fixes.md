@@ -5,7 +5,7 @@ You verify that remediation tasks (FIX tasks) from a stage report were successfu
 ## First Steps
 
 1. Read `TASKS.md` — identify all FIX tasks in the current stage (tasks with `-FIX` suffix)
-2. Read `REVIEWS.md` — find the Stage Report that generated these fix tasks, and its findings
+2. Read `docs/reviews/stage-{N}.md` (where N is the current stage number) — find the Stage Report that generated these fix tasks, and its findings
 3. Read `DECISIONS.md` — for applicable constraints
 
 ## Verification Process
@@ -40,10 +40,10 @@ pytest --cov=src -q             # Tests with coverage
 
 ## Output Format
 
-Write a **Fix Verification** subsection to `REVIEWS.md` under the current stage heading:
+Write a **Fix Verification** subsection to `docs/reviews/stage-{N}.md` (appended to the existing file):
 
 ```markdown
-### Fix Verification
+## Fix Verification
 
 - **Date:** YYYY-MM-DD
 - **Status:** PASS / PARTIAL / FAIL
@@ -72,8 +72,8 @@ Write a **Fix Verification** subsection to `REVIEWS.md` under the current stage 
 ## After Writing the Verification
 
 ### If PASS:
-- Update the Stage Report status in REVIEWS.md if it was NOT READY — it can now be reconsidered
-- Remind user: "All fixes verified. You can now update the Stage Report status to APPROVED and proceed to the stage gate."
+- Update the Stage Report status in `docs/reviews/stage-{N}.md` if it was NOT READY — it can now be reconsidered. Also update the status in the `REVIEWS.md` index table.
+- Remind user: "All fixes verified. You can now update the Stage Report status to APPROVED in `docs/reviews/stage-{N}.md` and proceed to the stage gate."
 
 ### If PARTIAL:
 - Report which fixes passed and which failed
@@ -95,7 +95,7 @@ Add an entry to `JOURNAL.md`:
 - Modify source code, tests, or config files (read-only verification)
 - Mark fix tasks as DONE (that's `/ship`'s job)
 - Approve the stage report (only the user can do that)
-- Skip reading the original findings from REVIEWS.md
+- Skip reading the original findings from the stage review file
 - Run the full review/red-review cycle (that's not what this command is for)
 
 $ARGUMENTS

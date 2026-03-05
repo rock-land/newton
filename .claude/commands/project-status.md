@@ -5,7 +5,7 @@ Print a concise project status dashboard. Read the governance files and report t
 ## First Steps
 
 1. Read `TASKS.md` — identify current stage, task statuses
-2. Read `REVIEWS.md` — check review pipeline status
+2. Read `REVIEWS.md` index — check review pipeline status. Read `docs/reviews/stage-{N}.md` for the current stage if more detail is needed.
 3. Read `VERSION` — current version
 4. Read `JOURNAL.md` — last few entries for recent activity context
 
@@ -40,7 +40,7 @@ Print a concise project status dashboard. Read the governance files and report t
 - If all impl tasks done but no review: "All implementation tasks complete. Run `/review` to start the review pipeline."
 - If review done but no red-review: "Run `/red-review` for the adversarial review."
 - If red-review done but no stage-report: "Run `/stage-report` to compile the unified report."
-- If stage report pending approval: "Stage report is PENDING. Review and approve in REVIEWS.md."
+- If stage report pending approval: "Stage report is PENDING. Review and approve in `docs/reviews/stage-{N}.md`."
 - If stage report approved but gate not run: "Run `/task T-NG` to execute the stage gate."
 - If fix tasks exist: "Remediation tasks need attention. Run `/task` to work on fixes."
 - If stage complete: "Stage [N] complete. Run `/stage-init` to initialize Stage [N+1]."

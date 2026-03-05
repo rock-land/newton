@@ -468,6 +468,26 @@ class TestExecuteSignalRejection:
         assert not result.success
         assert result.rejection_reason == "zero_position_size"
 
+    def test_zero_units_after_conversion_rejects(self) -> None:
+        """Dollar→units conversion yields 0 when gap_adjusted=0 → reject."""
+        executor, broker, store = _make_executor()
+        signal = _make_signal()
+        result = executor.execute_signal(
+            signal=signal,
+            risk_config=_make_risk_config(hard_stop_pct=0.0),
+            portfolio_config=_make_portfolio_config(),
+            account=_make_account(),
+            open_positions=[],
+            last_candle_time=_now(),
+            signal_interval_seconds=3600,
+            last_retrain_days=5,
+            regime_confidence=0.6,
+            win_rate=0.55, avg_win=200.0, avg_loss=100.0, num_trades=10,
+            current_price=1.10,
+        )
+        assert not result.success
+        assert result.rejection_reason == "zero_position_size"
+
 
 # ---------------------------------------------------------------------------
 # Idempotency (§5.11)

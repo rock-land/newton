@@ -25,9 +25,9 @@ Print this reference. Do not read any files or perform any actions — just disp
 
 | Command | Purpose | Example |
 |---|---|---|
-| `/review` | Code review → writes to REVIEWS.md | `/review` |
-| `/red-review` | Adversarial red team review (subagent, fresh context) → writes to REVIEWS.md | `/red-review` |
-| `/stage-report` | Compiles both reviews into unified report (interviews you first) → sign-off doc | `/stage-report` |
+| `/review` | Code review → writes to `docs/reviews/stage-{N}.md` | `/review` |
+| `/red-review` | Adversarial red team review (subagent, fresh context) → writes to `docs/reviews/stage-{N}.md` | `/red-review` |
+| `/stage-report` | Compiles both reviews into unified report (interviews you first) → writes to `docs/reviews/stage-{N}.md` | `/stage-report` |
 | `/verify-fixes` | Verify remediation tasks were completed successfully | `/verify-fixes` |
 | `/spec-check` | Validate implementation against SPEC.md | `/spec-check check Stage 1 acceptance criteria` |
 | `/help` | Show this reference | `/help` |
@@ -47,9 +47,9 @@ Print this reference. Do not read any files or perform any actions — just disp
 ... repeat for each task in the stage ...
 
 # Stage review pipeline (run all three in order):
-/review                 # Code review → REVIEWS.md
-/red-review             # Adversarial review (subagent) → REVIEWS.md
-/stage-report           # Interviews you, then compiles unified report → REVIEWS.md
+/review                 # Code review → docs/reviews/stage-{N}.md
+/red-review             # Adversarial review (subagent) → docs/reviews/stage-{N}.md
+/stage-report           # Interviews you, then compiles unified report → docs/reviews/stage-{N}.md
                         # Sign off on the stage report
 
 # If fixes needed:
@@ -73,7 +73,8 @@ Print this reference. Do not read any files or perform any actions — just disp
 | `SPEC.md` | Canonical specification (source of truth) |
 | `DECISIONS.md` | Decision log (overrides spec where they conflict) |
 | `TASKS.md` | Task queue, stage tracking, version reference |
-| `REVIEWS.md` | Stage code review log (sign-off required before merge) |
+| `REVIEWS.md` | Review index — links to per-stage review files in `docs/reviews/` |
+| `docs/reviews/stage-{N}.md` | Per-stage code review, red team review, stage report, and fix verification |
 | `VERSION` | Current version |
 | `JOURNAL.md` | Dev journal — history of all commands and prompts |
 | `UAT.md` | User acceptance tests (cumulative across stages) |

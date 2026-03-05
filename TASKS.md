@@ -19,6 +19,7 @@ Status: Active
 | 0.4.0 | 4 | Stage 4 start |
 | 0.4.8 | 4 | Stage 4 complete |
 | 0.5.0 | 5 | Stage 5 start |
+| 0.5.12 | 5 | Stage 5 complete |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -154,7 +155,7 @@ The following work was completed before governance was established. This is not 
 | T-508-FIX1 | Binance adapter critical fixes: candle retrieval, get_positions, OCO stop-loss, dynamic quantity, direction-aware stop modification | server | `_fetch()` accepts JSON arrays; `get_candles()` parses raw klines array correctly; `get_positions()` returns actual positions from `/api/v3/account`; `place_market_order` places stop-loss order after fill (or closes + alerts on failure); `modify_stop_loss`/`close_position` use actual position quantity; `modify_stop_loss` derives side from direction; candle test uses real API response format; all tests pass with 100% coverage on changed code | DONE |
 | T-508-FIX2 | Position sizing units conversion: dollar risk to instrument units | server | Kelly sizing output converted from dollar risk to instrument units using price/stop-distance; Oanda adapter sends correct lot size; Binance adapter sends correct BTC quantity; tests verify conversion math for both instruments; existing risk tests updated | DONE |
 | T-508-FIX3 | Risk engine and circuit breaker spec compliance fixes | server | Trailing stop logic direction-aware for SELL trades; daily loss breaker latches once tripped (reset only at 00:00 UTC); non-kill-switch breakers trigger position closure callback; idempotency check uses narrow exception type (`KeyError`/`LookupError`); tests cover SELL trailing stops, daily loss latch behavior, breaker position closure, and narrow exception handling | DONE |
-| T-5G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; 100% branch on `risk.py`, `executor.py`, `reconciler.py`, `circuit_breaker.py`; all T-5xx tasks DONE | TODO |
+| T-5G | Stage gate: lint/type/test/coverage pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; 100% branch on `risk.py`, `executor.py`, `reconciler.py`, `circuit_breaker.py`; all T-5xx tasks DONE | DONE |
 
 ---
 

@@ -724,3 +724,16 @@ class TestInTradeControls:
             direction="SELL",
         )
         assert result.action == "HOLD"
+
+    def test_zero_entry_price_holds(self) -> None:
+        """entry_price=0 → profit_pct=0 → HOLD (no division by zero)."""
+        result = evaluate_in_trade_controls(
+            entry_price=0.0,
+            current_price=100.0,
+            current_stop=98.0,
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+        )
+        assert result.action == "HOLD"

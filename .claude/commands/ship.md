@@ -84,8 +84,8 @@ git push origin [stage-branch-name]
 This step **only runs when shipping a stage gate task** (task ID matches `T-NG` pattern). For regular tasks, skip to step 8.
 
 **Pre-merge checks:**
-1. Read `REVIEWS.md` — verify the current stage has an `APPROVED` **Stage Report** with sign-off
-   - If not approved: **STOP.** Report: "Stage report must be APPROVED in REVIEWS.md before merging to main. Run `/review` → `/red-review` → `/stage-report`."
+1. Read `docs/reviews/stage-{N}.md` (where N is the current stage number) — verify it has an `APPROVED` **Stage Report** with sign-off
+   - If not approved: **STOP.** Report: "Stage report must be APPROVED in `docs/reviews/stage-{N}.md` before merging to main. Run `/review` → `/red-review` → `/stage-report`."
 2. Verify all non-gate tasks in this stage are DONE in `TASKS.md`
    - If any are not DONE: **STOP.** Report the incomplete tasks.
 
@@ -153,7 +153,7 @@ After merging, report:
 - **Merge commit:** [short hash]
 - **Tag:** vX.Y.Z
 - **Branch merged:** [stage-branch-name]
-- **Stage Report:** APPROVED (sign-off: [date from REVIEWS.md])
+- **Stage Report:** APPROVED (sign-off: [date from docs/reviews/stage-{N}.md])
 
 Next stage: Stage [N+1] — [name from TASKS.md backlog]
 To start, run `/stage-init` to initialize Stage [N+1].
@@ -204,7 +204,7 @@ Run the stage review pipeline before the stage gate:
 ## What You Never Do
 
 - Commit directly to `main` — stage branches only
-- Merge to `main` without an APPROVED stage report in REVIEWS.md
+- Merge to `main` without an APPROVED stage report in `docs/reviews/stage-{N}.md`
 - Merge to `main` for anything other than a stage gate task
 - Ship without a passing quality gate
 - Use `git add -A` or `git add .`

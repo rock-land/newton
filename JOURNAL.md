@@ -5,6 +5,9 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 02:30 | Stage 5 / T-5G | /ship T-5G | Shipped stage gate — v0.5.12, merged to main, tagged |
+| 2026-03-06 02:00 | Stage 5 / T-5G | /task T-5G | Stage gate: quality gate validation for Stage 5 |
+| 2026-03-06 01:30 | Stage 5 / FIX tasks | /verify-fixes | Verified 3 fix tasks: PASS — all Critical/High findings resolved |
 | 2026-03-06 01:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /ship T-508-FIX1 | Shipped batched fix tasks (FIX1+FIX2+FIX3) — v0.5.11 |
 | 2026-03-06 00:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /task | Batched fix tasks: Binance adapter, position sizing, risk/circuit breaker compliance |
 | 2026-03-05 23:00 | Stage 5 / — | /stage-report | Compiled stage report: NOT READY — 4 critical, 6 high; 3 remediation tasks added (T-508-FIX1, FIX2, FIX3) |

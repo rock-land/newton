@@ -13,6 +13,37 @@ Each stage gets a version entry summarizing all work completed in that stage.
 Categories: Added, Changed, Deprecated, Removed, Fixed, Security
 -->
 
+## [0.5.12] - 2026-03-06
+
+### Added
+- BrokerAdapter protocol (`src/trading/broker_base.py`) — unified order/position interface for multi-broker trading with `OrderNotFoundError` idempotent cancel support (T-501)
+- Immutable trading domain models — `Order`, `Position`, `TradeRecord`, `Fill`, `AccountSummary`, `PositionDelta` frozen dataclasses (T-501)
+- OandaAdapter (`src/trading/broker_oanda.py`) — Oanda REST v20 broker adapter: market/limit orders, OCO stop-loss, position queries, account summary (T-502)
+- BinanceSpotAdapter (`src/trading/broker_binance.py`) — Binance spot adapter: market/limit orders, STOP_LOSS_LIMIT stops, `get_json_list` for multi-format responses, position tracking (T-503)
+- Risk management engine (`src/trading/risk.py`) — pre-trade checks (drawdown, correlation, exposure, staleness, regime), Kelly criterion sizing, direction-aware trailing stops for BUY/SELL, in-trade controls (T-504)
+- Circuit breaker system (`src/trading/circuit_breaker.py`) — daily loss limit with latch, max open positions, rapid-fire trade guard, `BreakerTrip` returns with action field, system-wide kill switch (T-505)
+- Order execution orchestrator (`src/trading/executor.py`) — signal→pre-trade→sizing→order→stop-loss→trade-record pipeline, dollar→units conversion, `OrderNotFoundError` idempotent handling (T-506)
+- Position reconciliation loop (`src/trading/reconciler.py`) — broker vs internal position comparison, MATCH/SYSTEM_EXTRA/BROKER_EXTRA classification, configurable reconcile interval (T-507)
+- Trading API endpoints (`src/api/v1/trading.py`) — `GET /trades`, `POST /kill`, `DELETE /kill` with safety confirm, `GET/PUT /config/risk` with Pydantic validation and audit logging (T-508)
+- 238 new tests (441 → 679), coverage 93% → 92% (new modules fully covered, denominator increased)
+
+### Changed
+- Risk pre-trade checks return structured `PreTradeResult` with rejection reasons instead of bare bool (T-504)
+- Circuit breaker `check()` returns `BreakerTrip` dataclass with `action` field instead of raising exceptions (T-505)
+- Trailing stop calculation is direction-aware: BUY positions trail upward, SELL positions trail downward (T-508-FIX1)
+
+### Fixed
+- Binance adapter `get_json_list()` handles both `list` and `dict` API responses without crashing (T-508-FIX1)
+- Dollar→units position sizing correctly converts notional amounts using current price (T-508-FIX2)
+- Risk `evaluate_in_trade_controls()` handles zero entry price without division-by-zero (T-508-FIX1)
+- Circuit breaker daily loss check uses absolute value for threshold comparison (T-508-FIX3)
+- `OrderNotFoundError` during cancel treated as success (idempotent) instead of raising (T-508-FIX3)
+
+### Security
+- Kill switch requires `confirm=true` query parameter for deactivation — prevents accidental disabling (T-508)
+- Risk config PUT endpoint validates all parameters against Pydantic bounds before applying (T-508)
+- API error responses do not leak internal details for trading endpoints (T-508-FIX1)
+
 ## [0.4.8] - 2026-03-05
 
 ### Added
