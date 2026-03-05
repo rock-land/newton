@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.5.0` (Stage 5 start)
-**Latest Release:** `0.4.8` (Stage 4 complete)
+**Current Version:** `0.6.0` (Stage 6 start)
+**Latest Release:** `0.5.12` (Stage 5 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -20,6 +20,7 @@ Status: Active
 | 0.4.8 | 4 | Stage 4 complete |
 | 0.5.0 | 5 | Stage 5 start |
 | 0.5.12 | 5 | Stage 5 complete |
+| 0.6.0 | 6 | Stage 6 start |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -159,6 +160,24 @@ The following work was completed before governance was established. This is not 
 
 ---
 
+## Stage 6: Backtesting
+
+**Branch:** `stage/6-backtesting`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-601 | Implement trade simulation engine in `simulator.py` | server | Per-instrument fill model per SPEC §9.2: EUR/USD fill at `open[T+1] ± (1.0 pip slippage + 0.75 pip half-spread)`, BTC/USD fill at `open[T+1] ± (0.02% slippage + 0.025% half-spread)` + 0.10% taker commission; pessimistic mode with 2× slippage/spread multiplier; no partial fills or rejects; frozen `SimulatedFill` dataclass; tests verify fill price math for both instruments in normal and pessimistic modes | TODO |
+| T-602 | Implement backtest engine in `engine.py` | server | End-to-end backtest orchestration: loads OHLCV data → computes features → generates signals via `SignalGenerator` → applies pre-trade risk checks → simulates fills → tracks positions with stop-loss management (hard/trailing/time stops) → records trade lifecycle; per-instrument execution with configurable date range; uses `SimulatedFill` from T-601; frozen `BacktestResult` with equity curve, trade list, and raw metrics; tests with synthetic data verify full lifecycle | TODO |
+| T-603 | Implement performance metrics in `metrics.py` | server | All §9.5 metrics: Sharpe ratio (√252 forex, √365 crypto), profit factor, max drawdown, win rate, Calmar ratio, expectancy, calibration error (per decile); hard gate evaluation (Sharpe >0.8, PF >1.3, DD <15%, expectancy >0, trade count >30/fold, cal error <5pp); portfolio-level metrics (portfolio Sharpe, max portfolio DD <20%, instrument return correlation); frozen `PerformanceMetrics` and `MetricGateResult` dataclasses; tests verify each formula against hand-calculated values | TODO |
+| T-604 | Implement purged K-fold cross-validation | server | K=5 purged K-fold per SPEC §9.2: 48-hour purge zones between train/test; per-instrument execution; per-fold metric collection; complements walk-forward (T-303) as robustness check; frozen `KFoldResult` dataclass; tests verify fold boundaries, purge zone enforcement, and no data leakage | TODO |
+| T-605 | Implement regime-aware reporting in `report.py` | server | Per-regime performance breakdown per §9.4: Sharpe, PF, win rate per regime per instrument; regime transition timeline; regime-adjusted metrics weighted by time-in-regime; low-sample flagging (<20 trades in any fold); bias controls checklist per §9.3 (look-ahead, overfitting, survivorship, selection, data snooping); frozen `BacktestReport` dataclass; JSON-serializable output; tests verify regime breakdown, low-sample flagging, and bias control metadata | TODO |
+| T-606 | Backtest API endpoints | server | `POST /api/v1/backtest` — run backtest (instrument, strategy, date range, pessimistic mode flag); `GET /api/v1/backtest/{id}` — retrieve results; results include equity curve, trade list, metrics, gate results, regime breakdown, bias controls; async execution with status polling or sync for small date ranges; API tests for both endpoints | TODO |
+| T-607 | Backtest Runner UI | client | React page accessible from sidebar: instrument selector, date range picker, pessimistic mode toggle, "Run Backtest" button; progress/status display during execution; results view with equity curve chart (Recharts), metrics summary cards (Sharpe, PF, DD, win rate, expectancy), gate pass/fail badges; trade list table with entry/exit/PnL/duration; dark mode | TODO |
+| T-608 | Backtest results viewer and comparison UI | client | Regime overlay on equity curve chart; calibration plot (predicted vs observed by decile); per-regime metrics breakdown table with low-sample flags; backtest comparison: side-by-side two runs with diff highlighting on metrics; trade overlay on candlestick chart (entry/exit markers, stop levels, regime shading); backtest history list with run metadata | TODO |
+| T-6G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; `cd client && npm run build` PASS; all T-6xx tasks DONE | TODO |
+
+---
+
 ## Backlog
 
 <!--
@@ -169,7 +188,7 @@ during /stage-init, NOT in advance. Keep entries lightweight.
 | Stage | Name | Summary |
 |-------|------|---------|
 | ~~5~~ | ~~Trading Engine~~ | ~~Active — see Stage 5 above~~ |
-| 6 | Backtesting | Walk-forward validation, purged K-fold CV, performance metrics, reporting (SPEC §9) |
+| ~~6~~ | ~~Backtesting~~ | ~~Active — see Stage 6 above~~ |
 | 7 | Client Web UI | Signal display, data viewer with charting, trade monitoring — React foundation from Stage 4 (SPEC §8) |
 | 8 | Paper Trading | Oanda practice account + Binance testnet integration, live data pipeline (SPEC §11) |
 | 9 | Live Trading | Production deployment, monitoring, kill switches, operational runbooks (SPEC §11) |
