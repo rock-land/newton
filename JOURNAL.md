@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 18:00 | Stage 5 / T-507 | /ship T-507 | Shipped position reconciliation loop — v0.5.7 |
+| 2026-03-05 17:00 | Stage 5 / T-507 | /task T-507 | Position reconciliation loop in reconciler.py — broker vs internal position comparison, MATCH/SYSTEM_EXTRA/BROKER_EXTRA classification |
 | 2026-03-05 16:00 | Stage 5 / T-506 | /ship T-506 | Shipped order execution orchestrator — v0.5.6 |
 | 2026-03-05 15:00 | Stage 5 / T-506 | /task T-506 | Order execution orchestrator in executor.py — signal → pre-trade → sizing → order → stop-loss → trade record |
 | 2026-03-05 14:00 | Stage 5 / T-505 | /ship T-505 | Shipped circuit breaker system — v0.5.5 |
