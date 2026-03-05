@@ -45,6 +45,15 @@ class BreakerState:
 
 
 @dataclass(frozen=True)
+class BreakerTrip:
+    """Action required when a circuit breaker newly trips (§6.5)."""
+
+    name: str
+    instrument: str
+    action: str  # "close_positions" | "close_all"
+
+
+@dataclass(frozen=True)
 class CircuitBreakerSnapshot:
     """Point-in-time snapshot of all circuit breaker states."""
 
@@ -121,25 +130,35 @@ class CircuitBreakerManager:
         ath_equity: float,
         daily_loss_limit_pct: float,
         max_drawdown_pct: float,
-    ) -> None:
-        """Update equity and evaluate daily loss / max drawdown breakers."""
+    ) -> list[BreakerTrip]:
+        """Update equity and evaluate daily loss / max drawdown breakers.
+
+        Returns a list of newly tripped breakers with required actions.
+        Daily loss latches once tripped — only reset via ``reset_daily()``
+        at 00:00 UTC (SPEC §6.5).
+        """
         state = self._instruments[instrument]
         now = datetime.now(UTC)
+        trips: list[BreakerTrip] = []
 
-        # --- Daily loss check ---
-        if day_open_equity > 0:
+        # --- Daily loss check (latching — no auto-untrip on recovery) ---
+        if day_open_equity > 0 and not state.daily_loss_tripped:
             loss_pct = (day_open_equity - current_equity) / day_open_equity
             if loss_pct >= daily_loss_limit_pct:
-                if not state.daily_loss_tripped:
-                    state.daily_loss_tripped = True
-                    state.daily_loss_tripped_at = now
-                    state.daily_loss_reason = (
-                        f"daily loss {loss_pct:.2%} >= {daily_loss_limit_pct:.2%}"
-                    )
-                    logger.warning(
-                        "Circuit breaker TRIPPED [daily_loss] %s: %s",
-                        instrument, state.daily_loss_reason,
-                    )
+                state.daily_loss_tripped = True
+                state.daily_loss_tripped_at = now
+                state.daily_loss_reason = (
+                    f"daily loss {loss_pct:.2%} >= {daily_loss_limit_pct:.2%}"
+                )
+                logger.warning(
+                    "Circuit breaker TRIPPED [daily_loss] %s: %s",
+                    instrument, state.daily_loss_reason,
+                )
+                trips.append(BreakerTrip(
+                    name="daily_loss",
+                    instrument=instrument,
+                    action="close_positions",
+                ))
                 # Also trip portfolio-level
                 if not self._portfolio_daily_loss_tripped:
                     self._portfolio_daily_loss_tripped = True
@@ -147,10 +166,6 @@ class CircuitBreakerManager:
                     self._portfolio_daily_loss_reason = (
                         f"daily loss on {instrument}: {loss_pct:.2%}"
                     )
-            else:
-                state.daily_loss_tripped = False
-                state.daily_loss_tripped_at = None
-                state.daily_loss_reason = ""
 
         # --- Max drawdown check ---
         if ath_equity > 0:
@@ -166,12 +181,19 @@ class CircuitBreakerManager:
                         "Circuit breaker TRIPPED [max_drawdown] %s: %s",
                         instrument, state.max_drawdown_reason,
                     )
+                    trips.append(BreakerTrip(
+                        name="max_drawdown",
+                        instrument=instrument,
+                        action="close_all",
+                    ))
                 if not self._portfolio_max_drawdown_tripped:
                     self._portfolio_max_drawdown_tripped = True
                     self._portfolio_max_drawdown_tripped_at = now
                     self._portfolio_max_drawdown_reason = (
                         f"drawdown on {instrument}: {drawdown_pct:.2%}"
                     )
+
+        return trips
 
     # ------------------------------------------------------------------
     # Trade result recording — triggers consecutive loss & model degradation

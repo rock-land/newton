@@ -9,6 +9,7 @@ import pytest
 from src.analysis.signal_contract import Signal
 from src.trading.broker_base import (
     AccountInfo,
+    OrderNotFoundError,
     OrderResult,
     OrderStatus,
     Position,
@@ -489,7 +490,7 @@ class TestIdempotency:
             trade_store=store, circuit_breaker=cb,
         )
         result = executor._place_with_idempotency(
-            instrument="EUR_USD", units=100.0, stop_loss=1.08,
+            instrument="EUR_USD", direction="BUY", units=100.0, stop_loss=1.08,
             client_order_id=coid,
         )
         assert result.success
@@ -501,7 +502,7 @@ class TestIdempotency:
         executor, broker, store = _make_executor()
         coid = "NEWTON-EUR_USD-1000"
         result = executor._place_with_idempotency(
-            instrument="EUR_USD", units=100.0, stop_loss=1.08,
+            instrument="EUR_USD", direction="BUY", units=100.0, stop_loss=1.08,
             client_order_id=coid,
         )
         assert result.success
@@ -865,14 +866,13 @@ class TestCoverageGaps:
         assert len(broker.positions_closed) == 0
 
     def test_idempotency_exception_falls_through(self) -> None:
-        """When get_order_status raises, we fall through to place_market_order."""
+        """When get_order_status raises OrderNotFoundError, we fall through."""
         broker = FakeBrokerAdapter()
-        # Make get_order_status raise for our specific ID
         original_get = broker.get_order_status
 
         def raising_get(coid: str) -> OrderStatus:
             if coid == "NEWTON-EUR_USD-EXC":
-                raise RuntimeError("not found")
+                raise OrderNotFoundError("not found")
             return original_get(coid)
 
         broker.get_order_status = raising_get  # type: ignore[assignment]
@@ -883,7 +883,7 @@ class TestCoverageGaps:
             trade_store=store, circuit_breaker=cb,
         )
         result = executor._place_with_idempotency(
-            instrument="EUR_USD", units=100.0, stop_loss=1.08,
+            instrument="EUR_USD", direction="BUY", units=100.0, stop_loss=1.08,
             client_order_id="NEWTON-EUR_USD-EXC",
         )
         assert result.success

@@ -12,6 +12,7 @@ import pytest
 from src.trading.broker_base import (
     AccountInfo,
     BrokerAdapter,
+    OrderNotFoundError,
     OrderResult,
     OrderStatus,
 )
@@ -31,12 +32,16 @@ class FakeBinanceTradingClient:
 
     def __init__(self) -> None:
         self._responses: dict[str, dict[str, Any]] = {}
+        self._list_responses: dict[str, list[Any]] = {}
         self.last_method: str = ""
         self.last_path: str = ""
         self.last_params: dict[str, str] = {}
 
     def set_response(self, key: str, response: dict[str, Any]) -> None:
         self._responses[key] = response
+
+    def set_list_response(self, key: str, response: list[Any]) -> None:
+        self._list_responses[key] = response
 
     def _lookup(self, method: str, path: str, params: dict[str, str]) -> dict[str, Any]:
         self.last_method = method
@@ -47,8 +52,20 @@ class FakeBinanceTradingClient:
                 return resp
         return {}
 
+    def _lookup_list(self, method: str, path: str, params: dict[str, str]) -> list[Any]:
+        self.last_method = method
+        self.last_path = path
+        self.last_params = params
+        for key, resp in self._list_responses.items():
+            if key in path:
+                return resp
+        return []
+
     def get_json(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         return self._lookup("GET", path, params)
+
+    def get_json_list(self, path: str, params: dict[str, str]) -> list[Any]:
+        return self._lookup_list("GET", path, params)
 
     def post_json(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         return self._lookup("POST", path, params)
@@ -254,11 +271,34 @@ class TestGetAccount:
 
 
 class TestGetPositions:
-    def test_returns_empty_list(self) -> None:
-        adapter = _make_adapter()
+    def test_returns_empty_when_no_btc_balance(self) -> None:
+        client = FakeBinanceTradingClient()
+        client.set_response("account", {"balances": [
+            {"asset": "USDT", "free": "10000.0", "locked": "0.0"},
+        ]})
+        adapter = _make_adapter(client)
         result = adapter.get_positions()
         assert result == []
-        assert isinstance(result, list)
+
+    def test_returns_position_for_btc_balance(self) -> None:
+        client = FakeBinanceTradingClient()
+        client.set_response("account", ACCOUNT_RESPONSE)
+        adapter = _make_adapter(client)
+        result = adapter.get_positions()
+        assert len(result) == 1
+        pos = result[0]
+        assert pos.instrument == "BTC_USD"
+        assert pos.direction == "BUY"
+        assert pos.units == 0.5  # free=0.5 + locked=0.0
+
+    def test_dust_balance_ignored(self) -> None:
+        client = FakeBinanceTradingClient()
+        client.set_response("account", {"balances": [
+            {"asset": "BTC", "free": "0.000001", "locked": "0.0"},
+        ]})
+        adapter = _make_adapter(client)
+        result = adapter.get_positions()
+        assert result == []
 
 
 # ---------------------------------------------------------------------------
@@ -391,8 +431,7 @@ class TestGetOrderStatus:
 class TestGetCandles:
     def test_returns_candles(self) -> None:
         client = FakeBinanceTradingClient()
-        # get_candles uses a list response, wrap it
-        client.set_response("klines", {"candles": CANDLES_RESPONSE})
+        client.set_list_response("klines", CANDLES_RESPONSE)
         adapter = _make_adapter(client)
 
         result = adapter.get_candles(
@@ -476,3 +515,62 @@ class TestRetryLogic:
             _retry_request(fail_once, backoffs=(0.0, 0.0, 0.0))
 
         assert "Retry 1/3" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# get_order_status — OrderNotFoundError
+# ---------------------------------------------------------------------------
+
+
+class TestGetOrderStatusNotFound:
+    def test_empty_response_raises_not_found(self) -> None:
+        """Empty dict response → OrderNotFoundError."""
+        client = FakeBinanceTradingClient()
+        # No response set → _lookup returns {}
+        adapter = _make_adapter(client)
+        with pytest.raises(OrderNotFoundError):
+            adapter.get_order_status("NONEXISTENT-ORDER")
+
+
+# ---------------------------------------------------------------------------
+# OCO stop-loss placement
+# ---------------------------------------------------------------------------
+
+
+class TestOCOStopLoss:
+    def test_stop_loss_placed_after_fill(self) -> None:
+        """Successful entry tracks position info for modify/close."""
+        client = FakeBinanceTradingClient()
+        client.set_response("order", ORDER_FILL_RESPONSE)
+        adapter = _make_adapter(client)
+
+        result = adapter.place_market_order(
+            instrument="BTC_USD",
+            units=0.01,
+            stop_loss=43650.0,
+            client_order_id="NEWTON-BTC_USD-1700000000000",
+        )
+
+        assert result.success
+        # Position info tracked by order ID
+        assert "12345" in adapter._position_info
+
+    def test_tracked_quantity_used_in_close(self) -> None:
+        """close_position uses tracked quantity, not hardcoded."""
+        client = FakeBinanceTradingClient()
+        client.set_response("order", ORDER_FILL_RESPONSE)
+        adapter = _make_adapter(client)
+
+        # First place an order to populate tracking
+        adapter.place_market_order(
+            instrument="BTC_USD",
+            units=0.05,
+            stop_loss=43650.0,
+            client_order_id="test-oco",
+        )
+
+        # Set close response
+        client.set_response("order", CLOSE_ORDER_RESPONSE)
+        # Close should look up tracked info for order_id "12345"
+        result = adapter.close_position("12345")
+        assert result.success

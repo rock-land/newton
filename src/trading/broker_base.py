@@ -93,6 +93,15 @@ def make_client_order_id(instrument: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Exceptions
+# ---------------------------------------------------------------------------
+
+
+class OrderNotFoundError(Exception):
+    """Raised when an order lookup finds no matching order on the broker."""
+
+
+# ---------------------------------------------------------------------------
 # Protocol — per DEC-005 (no inheritance)
 # ---------------------------------------------------------------------------
 

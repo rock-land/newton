@@ -649,3 +649,78 @@ class TestInTradeControls:
         )
 
         assert result.action == "CLOSE"
+
+    # -- SELL direction tests --
+
+    def test_sell_hold_normal(self) -> None:
+        """SELL: no trigger → HOLD."""
+        result = evaluate_in_trade_controls(
+            entry_price=100.0,
+            current_price=99.5,
+            current_stop=102.0,
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+            direction="SELL",
+        )
+        assert result.action == "HOLD"
+
+    def test_sell_trailing_activation(self) -> None:
+        """SELL: profit >= activation → move stop DOWN to entry (breakeven)."""
+        result = evaluate_in_trade_controls(
+            entry_price=100.0,
+            current_price=98.9,  # +1.1% profit for SELL
+            current_stop=102.0,  # stop above entry
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+            direction="SELL",
+        )
+        assert result.action == "MOVE_STOP"
+        assert result.new_stop == pytest.approx(100.0, abs=0.01)
+
+    def test_sell_trailing_activation_already_at_entry(self) -> None:
+        """SELL: stop already at entry → HOLD."""
+        result = evaluate_in_trade_controls(
+            entry_price=100.0,
+            current_price=98.9,
+            current_stop=100.0,  # already at breakeven
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+            direction="SELL",
+        )
+        assert result.action == "HOLD"
+
+    def test_sell_trailing_advance(self) -> None:
+        """SELL: profit >= breakeven_pct → move stop to -1% below entry."""
+        result = evaluate_in_trade_controls(
+            entry_price=100.0,
+            current_price=97.5,  # +2.5% profit for SELL
+            current_stop=100.0,  # stop at entry (activated)
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+            direction="SELL",
+        )
+        assert result.action == "MOVE_STOP"
+        # -1% below entry = 99.0
+        assert result.new_stop == pytest.approx(99.0, abs=0.01)
+
+    def test_sell_trailing_advance_already_below(self) -> None:
+        """SELL: stop already below -1% → HOLD."""
+        result = evaluate_in_trade_controls(
+            entry_price=100.0,
+            current_price=97.5,
+            current_stop=98.5,  # already below 99.0
+            open_hours=1.0,
+            current_atr=1.0,
+            avg_atr_30d=1.0,
+            config=self._config(),
+            direction="SELL",
+        )
+        assert result.action == "HOLD"

@@ -5,6 +5,11 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 01:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /ship T-508-FIX1 | Shipped batched fix tasks (FIX1+FIX2+FIX3) — v0.5.11 |
+| 2026-03-06 00:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /task | Batched fix tasks: Binance adapter, position sizing, risk/circuit breaker compliance |
+| 2026-03-05 23:00 | Stage 5 / — | /stage-report | Compiled stage report: NOT READY — 4 critical, 6 high; 3 remediation tasks added (T-508-FIX1, FIX2, FIX3) |
+| 2026-03-05 22:00 | Stage 5 / — | /red-review | Red team review completed: FAIL — 5 critical, 7 high findings |
+| 2026-03-05 21:00 | Stage 5 / — | /review | Code review completed: Needs fixes (W-1: direction-blind trailing stops) |
 | 2026-03-05 20:00 | Stage 5 / T-508 | /ship T-508 | Shipped trading API endpoints and kill switch — v0.5.8 |
 | 2026-03-05 19:00 | Stage 5 / T-508 | /task T-508 | Trading API endpoints and kill switch — GET /trades, POST/DELETE /kill, GET/PUT /config/risk with audit logging |
 | 2026-03-05 18:00 | Stage 5 / T-507 | /ship T-507 | Shipped position reconciliation loop — v0.5.7 |

@@ -61,9 +61,14 @@ class CheckResult:
 
 @dataclass(frozen=True)
 class SizingResult:
-    """Position sizing calculation output."""
+    """Position sizing calculation output.
 
-    units: float
+    ``units`` is the dollar risk amount (equity × risk_pct). Conversion to
+    instrument units requires the current price and stop distance, which is
+    done by the executor at order placement time.
+    """
+
+    units: float  # Dollar risk amount, NOT instrument units
     risk_pct: float
     method: str  # "kelly" | "micro"
 
@@ -360,10 +365,12 @@ def evaluate_in_trade_controls(
     current_atr: float,
     avg_atr_30d: float,
     config: ResolvedRiskConfig,
+    direction: Direction = "BUY",
 ) -> InTradeAction:
     """Evaluate in-trade controls and return recommended action (§6.4).
 
     Priority: time stop → volatility → trailing advance → trailing activation → hold.
+    Direction-aware: profit and stop targets computed correctly for both BUY and SELL.
     """
     # 1. Time stop
     if open_hours > config.time_stop_hours:
@@ -383,27 +390,56 @@ def evaluate_in_trade_controls(
                 reason=f"volatility: ATR {current_atr:.4f} > {vol_threshold:.4f} threshold",
             )
 
-    # Profit percentage
-    profit_pct = (current_price - entry_price) / entry_price if entry_price > 0 else 0.0
+    # Profit percentage — direction-aware
+    if entry_price > 0:
+        if direction == "BUY":
+            profit_pct = (current_price - entry_price) / entry_price
+        else:
+            profit_pct = (entry_price - current_price) / entry_price
+    else:
+        profit_pct = 0.0
 
-    # 3. Trailing stop advance: profit >= trailing_breakeven_pct → move stop to +1% above entry
-    if profit_pct >= config.trailing_breakeven_pct:
-        target_stop = entry_price * (1.0 + config.trailing_activation_pct)
-        if current_stop < target_stop:
-            return InTradeAction(
-                action="MOVE_STOP",
-                new_stop=target_stop,
-                reason=f"trailing advance: profit {profit_pct:.2%} >= {config.trailing_breakeven_pct:.2%}",
-            )
+    # Trailing stop logic — direction-aware
+    if direction == "BUY":
+        # BUY: stop moves UP to protect profits
+        # 3. Advance: profit >= breakeven_pct → move stop to +activation_pct above entry
+        if profit_pct >= config.trailing_breakeven_pct:
+            target_stop = entry_price * (1.0 + config.trailing_activation_pct)
+            if current_stop < target_stop:
+                return InTradeAction(
+                    action="MOVE_STOP",
+                    new_stop=target_stop,
+                    reason=f"trailing advance: profit {profit_pct:.2%} >= {config.trailing_breakeven_pct:.2%}",
+                )
 
-    # 4. Trailing stop activation: profit >= trailing_activation_pct → move to breakeven
-    if profit_pct >= config.trailing_activation_pct:
-        if current_stop < entry_price:
-            return InTradeAction(
-                action="MOVE_STOP",
-                new_stop=entry_price,
-                reason=f"trailing activation: profit {profit_pct:.2%} >= {config.trailing_activation_pct:.2%}",
-            )
+        # 4. Activation: profit >= activation_pct → move to breakeven (entry)
+        if profit_pct >= config.trailing_activation_pct:
+            if current_stop < entry_price:
+                return InTradeAction(
+                    action="MOVE_STOP",
+                    new_stop=entry_price,
+                    reason=f"trailing activation: profit {profit_pct:.2%} >= {config.trailing_activation_pct:.2%}",
+                )
+    else:
+        # SELL: stop moves DOWN to protect profits
+        # 3. Advance: profit >= breakeven_pct → move stop to -activation_pct below entry
+        if profit_pct >= config.trailing_breakeven_pct:
+            target_stop = entry_price * (1.0 - config.trailing_activation_pct)
+            if current_stop > target_stop:
+                return InTradeAction(
+                    action="MOVE_STOP",
+                    new_stop=target_stop,
+                    reason=f"trailing advance: profit {profit_pct:.2%} >= {config.trailing_breakeven_pct:.2%}",
+                )
+
+        # 4. Activation: profit >= activation_pct → move to breakeven (entry)
+        if profit_pct >= config.trailing_activation_pct:
+            if current_stop > entry_price:
+                return InTradeAction(
+                    action="MOVE_STOP",
+                    new_stop=entry_price,
+                    reason=f"trailing activation: profit {profit_pct:.2%} >= {config.trailing_activation_pct:.2%}",
+                )
 
     # 5. Hold
     return InTradeAction(action="HOLD", new_stop=None, reason="no trigger")

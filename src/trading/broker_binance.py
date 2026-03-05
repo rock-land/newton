@@ -26,6 +26,7 @@ from src.data.fetcher_binance import (
 from src.trading.broker_base import (
     AccountInfo,
     Direction,
+    OrderNotFoundError,
     OrderResult,
     OrderStatus,
     Position,
@@ -52,6 +53,7 @@ class BinanceTradingHTTPClient(Protocol):
     """HTTP client for signed Binance trading operations."""
 
     def get_json(self, path: str, params: dict[str, str]) -> dict[str, Any]: ...
+    def get_json_list(self, path: str, params: dict[str, str]) -> list[Any]: ...
     def post_json(self, path: str, params: dict[str, str]) -> dict[str, Any]: ...
     def delete_json(self, path: str, params: dict[str, str]) -> dict[str, Any]: ...
 
@@ -77,6 +79,15 @@ class UrllibBinanceTradingClient:
         self._validate_url(url)
         req = Request(url, headers=self._headers())
         return self._fetch(req)
+
+    def get_json_list(self, path: str, params: dict[str, str]) -> list[Any]:
+        """GET returning a JSON array (e.g. /api/v3/klines)."""
+        signed = self._sign(params)
+        query = urlencode(signed)
+        url = f"{self._base_url}{path}?{query}"
+        self._validate_url(url)
+        req = Request(url, headers=self._headers())
+        return self._fetch_list(req)
 
     def post_json(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         signed = self._sign(params)
@@ -125,6 +136,15 @@ class UrllibBinanceTradingClient:
             raise ValueError(msg)
         return data
 
+    def _fetch_list(self, req: Request) -> list[Any]:
+        with urlopen(req, timeout=30) as response:  # nosec B310
+            payload = response.read().decode("utf-8")
+        data = json.loads(payload)
+        if not isinstance(data, list):
+            msg = "binance response must be a JSON array"
+            raise ValueError(msg)
+        return data
+
 
 # ---------------------------------------------------------------------------
 # Retry helper (§3.5 / §5.11)
@@ -167,6 +187,42 @@ def _retry_request(
     raise last_exc  # type: ignore[misc]
 
 
+def _retry_request_list(
+    fn: Any,
+    *,
+    backoffs: tuple[float, ...] = DEFAULT_BACKOFFS,
+) -> list[Any]:
+    """Execute ``fn()`` with retry on 5xx/timeout for list-returning endpoints."""
+    last_exc: Exception | None = None
+    max_attempts = len(backoffs) + 1
+
+    for attempt in range(max_attempts):
+        try:
+            return fn()  # type: ignore[no-any-return]
+        except HTTPError as exc:
+            if 400 <= exc.code < 500:
+                raise
+            last_exc = exc
+            if attempt < len(backoffs):
+                wait = backoffs[attempt]
+                logger.warning(
+                    "Retry %d/%d after HTTP %d (wait %.1fs)",
+                    attempt + 1, len(backoffs), exc.code, wait,
+                )
+                time.sleep(wait)
+        except (URLError, TimeoutError, OSError) as exc:
+            last_exc = exc
+            if attempt < len(backoffs):
+                wait = backoffs[attempt]
+                logger.warning(
+                    "Retry %d/%d after %s (wait %.1fs)",
+                    attempt + 1, len(backoffs), type(exc).__name__, wait,
+                )
+                time.sleep(wait)
+
+    raise last_exc  # type: ignore[misc]
+
+
 # ---------------------------------------------------------------------------
 # BinanceSpotAdapter
 # ---------------------------------------------------------------------------
@@ -174,6 +230,9 @@ def _retry_request(
 
 class BinanceSpotAdapter:
     """Binance spot REST adapter implementing BrokerAdapter protocol."""
+
+    # Minimum BTC balance to report as a position (filters dust)
+    _MIN_POSITION_UNITS = 0.00001
 
     def __init__(
         self,
@@ -184,12 +243,16 @@ class BinanceSpotAdapter:
         base_url: str = BINANCE_BASE_URL,
         symbol: str = "BTCUSDT",
         instrument: str = "BTC_USD",
+        base_asset: str = "BTC",
     ) -> None:
         self._http_client = http_client or UrllibBinanceTradingClient(
             api_key, api_secret, base_url=base_url,
         )
         self._symbol = symbol
         self._instrument = instrument
+        self._base_asset = base_asset
+        # Track position info per order for modify/close operations
+        self._position_info: dict[str, tuple[float, Direction]] = {}
 
     # -- get_candles ----------------------------------------------------------
 
@@ -213,10 +276,9 @@ class BinanceSpotAdapter:
             "limit": "1000",
         }
         path = "/api/v3/klines"
-        data = _retry_request(
-            lambda: self._http_client.get_json(path, params),
+        raw = _retry_request_list(
+            lambda: self._http_client.get_json_list(path, params),
         )
-        raw = data.get("candles", [])
         return list(normalize_binance_candles(raw, interval=interval))
 
     # -- get_account ----------------------------------------------------------
@@ -243,9 +305,40 @@ class BinanceSpotAdapter:
     # -- get_positions --------------------------------------------------------
 
     def get_positions(self) -> list[Position]:
-        # Binance spot has no position concept. Positions are tracked
-        # internally via Newton's trades table (option 1a per T-503).
-        return []
+        """Query Binance account balances and return non-dust positions.
+
+        For spot trading, a "position" is a non-trivial balance of the
+        base asset (e.g. BTC). v1 is long-only (§2.2), so direction is BUY.
+        Entry price and PnL are unknown from the broker side.
+        """
+        path = "/api/v3/account"
+        try:
+            data = _retry_request(
+                lambda: self._http_client.get_json(path, {}),
+            )
+        except Exception:
+            logger.warning("Failed to fetch Binance account for positions")
+            return []
+
+        positions: list[Position] = []
+        for bal in data.get("balances", []):
+            if bal.get("asset") == self._base_asset:
+                free = float(bal.get("free", 0))
+                locked = float(bal.get("locked", 0))
+                total = free + locked
+                if total >= self._MIN_POSITION_UNITS:
+                    positions.append(Position(
+                        instrument=self._instrument,
+                        direction="BUY",
+                        units=total,
+                        entry_price=0.0,
+                        unrealized_pnl=0.0,
+                        stop_loss=None,
+                        trade_id="",
+                    ))
+                break
+
+        return positions
 
     # -- place_market_order ---------------------------------------------------
 
@@ -283,12 +376,56 @@ class BinanceSpotAdapter:
                 error_message=str(data.get("msg", "UNKNOWN")),
             )
 
-        return self._parse_order_response(data, instrument, client_order_id)
+        result = self._parse_order_response(data, instrument, client_order_id)
+
+        # Place stop-loss order after entry fill (SPEC §5.9)
+        if result.success and result.fill_price and stop_loss > 0:
+            fill_qty = result.units or abs(units)
+            close_side: Direction = "SELL" if side == "BUY" else "BUY"
+            sl_result = self._place_stop_loss(
+                stop_price=stop_loss,
+                quantity=fill_qty,
+                side=close_side,
+            )
+            if sl_result is not None:
+                # Track position info keyed by the entry order ID
+                order_id = result.order_id or ""
+                self._position_info[order_id] = (fill_qty, close_side)
+                # Store the SL order ID for later modification
+                self._position_info[f"sl:{order_id}"] = (fill_qty, close_side)
+            else:
+                # OCO failed — close position and alert (§5.9)
+                logger.critical(
+                    "Stop-loss placement FAILED for %s — closing position",
+                    client_order_id,
+                )
+                if result.order_id:
+                    self.close_position(result.order_id)
+                return OrderResult(
+                    success=False,
+                    order_id=result.order_id,
+                    client_order_id=client_order_id,
+                    instrument=instrument,
+                    direction=result.direction,
+                    units=result.units,
+                    fill_price=result.fill_price,
+                    timestamp=result.timestamp,
+                    error_message="stop_loss_placement_failed",
+                )
+        elif result.success and result.order_id:
+            # Track even without stop-loss for close_position
+            close_side_fallback: Direction = "SELL" if side == "BUY" else "BUY"
+            fill_qty_fallback = result.units or abs(units)
+            self._position_info[result.order_id] = (
+                fill_qty_fallback, close_side_fallback,
+            )
+
+        return result
 
     # -- modify_stop_loss -----------------------------------------------------
 
     def modify_stop_loss(self, trade_id: str, new_stop: float) -> OrderResult:
-        # Cancel existing stop-loss orders for the symbol, then place new one
+        # Cancel existing stop-loss order, then place new one
         cancel_params = {
             "symbol": self._symbol,
             "orderId": trade_id,
@@ -298,14 +435,25 @@ class BinanceSpotAdapter:
             lambda: self._http_client.delete_json(cancel_path, cancel_params),
         )
 
+        # Look up tracked position info for quantity and side
+        info = self._position_info.get(trade_id) or self._position_info.get(
+            f"sl:{trade_id}",
+        )
+        quantity = info[0] if info else 0.01
+        close_side: Direction = info[1] if info else "SELL"
+
         # Place new stop-loss
-        limit_price = new_stop * (1 - SL_LIMIT_OFFSET_PCT)
+        limit_offset = (
+            (1 - SL_LIMIT_OFFSET_PCT) if close_side == "SELL"
+            else (1 + SL_LIMIT_OFFSET_PCT)
+        )
+        limit_price = new_stop * limit_offset
         sl_params = {
             "symbol": self._symbol,
-            "side": "SELL",
+            "side": close_side,
             "type": "STOP_LOSS_LIMIT",
             "timeInForce": "GTC",
-            "quantity": "0.01",  # Will be set by caller in production
+            "quantity": f"{quantity:.8f}",
             "stopPrice": f"{new_stop:.4f}",
             "price": f"{limit_price:.4f}",
         }
@@ -319,8 +467,8 @@ class BinanceSpotAdapter:
             order_id=str(data.get("orderId", "")),
             client_order_id=str(data.get("clientOrderId", "")),
             instrument=self._instrument,
-            direction="SELL",
-            units=0.0,
+            direction=close_side,
+            units=quantity,
             fill_price=None,
             timestamp=datetime.now(UTC),
             error_message=None,
@@ -329,13 +477,16 @@ class BinanceSpotAdapter:
     # -- close_position -------------------------------------------------------
 
     def close_position(self, trade_id: str) -> OrderResult:
-        # Market sell to close (assumes long position — short selling
-        # not supported on Binance spot)
+        # Look up tracked position info
+        info = self._position_info.get(trade_id)
+        quantity = info[0] if info else 0.01
+        close_side: Direction = info[1] if info else "SELL"
+
         params = {
             "symbol": self._symbol,
-            "side": "SELL",
+            "side": close_side,
             "type": "MARKET",
-            "quantity": "0.01",  # Will be set by caller in production
+            "quantity": f"{quantity:.8f}",
         }
         path = "/api/v3/order"
         data = _retry_request(
@@ -351,9 +502,20 @@ class BinanceSpotAdapter:
             "origClientOrderId": client_order_id,
         }
         path = "/api/v3/order"
-        data = _retry_request(
-            lambda: self._http_client.get_json(path, params),
-        )
+        try:
+            data = _retry_request(
+                lambda: self._http_client.get_json(path, params),
+            )
+        except HTTPError as exc:
+            if 400 <= exc.code < 500:
+                raise OrderNotFoundError(
+                    f"order {client_order_id} not found",
+                ) from exc
+            raise
+
+        # Empty response means order not found
+        if not data:
+            raise OrderNotFoundError(f"order {client_order_id} not found")
 
         state_map: dict[str, str] = {
             "NEW": "PENDING",
@@ -386,6 +548,36 @@ class BinanceSpotAdapter:
         )
 
     # -- helpers --------------------------------------------------------------
+
+    def _place_stop_loss(
+        self,
+        *,
+        stop_price: float,
+        quantity: float,
+        side: Direction,
+    ) -> dict[str, Any] | None:
+        """Place a STOP_LOSS_LIMIT order. Returns response or None on failure."""
+        limit_offset = (
+            (1 - SL_LIMIT_OFFSET_PCT) if side == "SELL"
+            else (1 + SL_LIMIT_OFFSET_PCT)
+        )
+        limit_price = stop_price * limit_offset
+        params = {
+            "symbol": self._symbol,
+            "side": side,
+            "type": "STOP_LOSS_LIMIT",
+            "timeInForce": "GTC",
+            "quantity": f"{quantity:.8f}",
+            "stopPrice": f"{stop_price:.4f}",
+            "price": f"{limit_price:.4f}",
+        }
+        try:
+            return _retry_request(
+                lambda: self._http_client.post_json("/api/v3/order", params),
+            )
+        except Exception:
+            logger.exception("Failed to place stop-loss order")
+            return None
 
     def _parse_order_response(
         self,

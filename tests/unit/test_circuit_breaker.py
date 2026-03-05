@@ -8,6 +8,7 @@ import pytest
 
 from src.trading.circuit_breaker import (
     BreakerState,
+    BreakerTrip,
     CircuitBreakerManager,
     CircuitBreakerSnapshot,
     _rolling_sharpe,
@@ -418,3 +419,97 @@ class TestSnapshotAndAggregation:
         from collections import deque
 
         assert _rolling_sharpe(deque()) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Daily loss latching (SPEC §6.5)
+# ---------------------------------------------------------------------------
+
+
+class TestDailyLossLatching:
+    def test_daily_loss_does_not_auto_untrip_on_recovery(self) -> None:
+        """Daily loss breaker stays tripped even when equity recovers (§6.5)."""
+        mgr = CircuitBreakerManager()
+        # Trip the breaker
+        mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=97_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        assert not mgr.is_entry_allowed("EUR_USD")
+
+        # Equity recovers — breaker should still be tripped
+        mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=100_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        assert not mgr.is_entry_allowed("EUR_USD")
+
+        # Only reset_daily clears it
+        mgr.reset_daily()
+        assert mgr.is_entry_allowed("EUR_USD")
+
+
+# ---------------------------------------------------------------------------
+# BreakerTrip returns from update_equity
+# ---------------------------------------------------------------------------
+
+
+class TestBreakerTripReturns:
+    def test_breaker_trip_frozen(self) -> None:
+        trip = BreakerTrip(name="daily_loss", instrument="EUR_USD", action="close_positions")
+        with pytest.raises(AttributeError):
+            trip.name = "other"  # type: ignore[misc]
+
+    def test_daily_loss_returns_close_positions(self) -> None:
+        """Daily loss trip returns BreakerTrip with action='close_positions'."""
+        mgr = CircuitBreakerManager()
+        trips = mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=97_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        assert len(trips) >= 1
+        daily = [t for t in trips if t.name == "daily_loss"]
+        assert len(daily) == 1
+        assert daily[0].action == "close_positions"
+        assert daily[0].instrument == "EUR_USD"
+
+    def test_max_drawdown_returns_close_all(self) -> None:
+        """Max drawdown trip returns BreakerTrip with action='close_all'."""
+        mgr = CircuitBreakerManager()
+        trips = mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=79_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.50, max_drawdown_pct=0.20,
+        )
+        dd_trips = [t for t in trips if t.name == "max_drawdown"]
+        assert len(dd_trips) == 1
+        assert dd_trips[0].action == "close_all"
+
+    def test_no_trip_returns_empty_list(self) -> None:
+        """No breaker tripped returns empty list."""
+        mgr = CircuitBreakerManager()
+        trips = mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=99_500.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        assert trips == []
+
+    def test_already_tripped_no_duplicate_trip(self) -> None:
+        """Second call with same conditions doesn't return duplicate trips."""
+        mgr = CircuitBreakerManager()
+        trips1 = mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=97_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        trips2 = mgr.update_equity(
+            instrument="EUR_USD", day_open_equity=100_000.0,
+            current_equity=96_000.0, ath_equity=100_000.0,
+            daily_loss_limit_pct=0.02, max_drawdown_pct=0.20,
+        )
+        assert len(trips1) >= 1
+        assert len(trips2) == 0  # Already tripped, no new trips

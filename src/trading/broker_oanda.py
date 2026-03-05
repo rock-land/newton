@@ -20,6 +20,7 @@ from src.data.fetcher_oanda import normalize_oanda_candles
 from src.trading.broker_base import (
     AccountInfo,
     Direction,
+    OrderNotFoundError,
     OrderResult,
     OrderStatus,
     Position,
@@ -290,9 +291,16 @@ class OandaAdapter:
 
     def get_order_status(self, client_order_id: str) -> OrderStatus:
         path = f"/v3/accounts/{self._account_id}/orders/@{client_order_id}"
-        data = _retry_request(
-            lambda: self._http_client.get_json(path, {}),
-        )
+        try:
+            data = _retry_request(
+                lambda: self._http_client.get_json(path, {}),
+            )
+        except HTTPError as exc:
+            if 400 <= exc.code < 500:
+                raise OrderNotFoundError(
+                    f"order {client_order_id} not found",
+                ) from exc
+            raise
         order = data.get("order", {})
         state_map = {
             "PENDING": "PENDING",

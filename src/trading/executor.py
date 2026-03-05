@@ -19,12 +19,14 @@ from src.trading.broker_base import (
     AccountInfo,
     BrokerAdapter,
     Direction,
+    OrderNotFoundError,
     OrderResult,
     Position,
     TradeStatus,
     make_client_order_id,
 )
 from src.trading.circuit_breaker import CircuitBreakerManager
+from src.data.schema import RiskPortfolio
 from src.trading.risk import (
     InTradeAction,
     ResolvedRiskConfig,
@@ -186,7 +188,7 @@ class OrderExecutor:
         *,
         signal: Signal,
         risk_config: ResolvedRiskConfig,
-        portfolio_config: object,
+        portfolio_config: RiskPortfolio,
         account: AccountInfo,
         open_positions: list[Position],
         last_candle_time: datetime,
@@ -201,11 +203,12 @@ class OrderExecutor:
     ) -> ExecutionResult:
         """Execute a signal through the full trade lifecycle.
 
-        Steps: validate action → pre-trade checks → place order → record trade.
+        Steps: validate action → pre-trade checks → dollar→units conversion →
+        place order → record trade.
 
         Args:
-            current_price: Latest market price for stop-loss estimation.
-                If None, stop is computed from the fill price after execution.
+            current_price: Latest market price for stop-loss estimation and
+                dollar→units conversion. Required for correct position sizing.
         """
         now = datetime.now(UTC)
 
@@ -229,7 +232,7 @@ class OrderExecutor:
             account=account,
             open_positions=open_positions,
             risk_config=risk_config,
-            portfolio_config=portfolio_config,  # type: ignore[arg-type]
+            portfolio_config=portfolio_config,
             circuit_breaker_ok=circuit_breaker_ok,
             last_candle_time=last_candle_time,
             signal_interval_seconds=signal_interval_seconds,
@@ -250,22 +253,36 @@ class OrderExecutor:
                 rejection_reason=pre_trade.reason,
             )
 
-        # 4. Check for zero position size
+        # 4. Check for zero position size (dollar risk)
         if pre_trade.position_size <= 0:
             return ExecutionResult(
                 success=False, trade_record=None,
                 rejection_reason="zero_position_size",
             )
 
-        # 5. Compute preliminary stop-loss from current price estimate
+        # 5. Convert dollar risk to instrument units (§6.3 + §6.4 gap risk)
         price_estimate = current_price or 0.0
+        if price_estimate > 0:
+            stop_distance = price_estimate * risk_config.hard_stop_pct
+            gap_adjusted = stop_distance * risk_config.gap_risk_multiplier
+            units = pre_trade.position_size / gap_adjusted if gap_adjusted > 0 else 0.0
+        else:
+            units = pre_trade.position_size  # Fallback: use raw dollar amount
+
+        if units <= 0:
+            return ExecutionResult(
+                success=False, trade_record=None,
+                rejection_reason="zero_position_size",
+            )
+
+        # 6. Compute preliminary stop-loss from current price estimate
         preliminary_stop = self._compute_stop_loss(
             direction=direction,
             entry_estimate=price_estimate,
             risk_config=risk_config,
         ) if price_estimate > 0 else 0.0
 
-        # 6. Save PENDING trade
+        # 7. Save PENDING trade
         regime_label = signal.metadata.get("regime_label")
         pending_trade = TradeRecord(
             client_order_id=client_order_id,
@@ -281,7 +298,7 @@ class OrderExecutor:
             entry_price=None,
             exit_time=None,
             exit_price=None,
-            quantity=pre_trade.position_size,
+            quantity=units,
             stop_loss_price=None,  # Set after fill
             status="PENDING",
             pnl=None,
@@ -293,10 +310,11 @@ class OrderExecutor:
         )
         self._store.save_trade(pending_trade)
 
-        # 7. Place order with idempotency check (§5.11)
+        # 8. Place order with idempotency check (§5.11)
         order_result = self._place_with_idempotency(
             instrument=signal.instrument,
-            units=pre_trade.position_size,
+            direction=direction,
+            units=units,
             stop_loss=preliminary_stop,
             client_order_id=client_order_id,
         )
@@ -385,6 +403,7 @@ class OrderExecutor:
                 current_atr=current_atr,
                 avg_atr_30d=avg_atr,
                 config=risk_config,
+                direction=trade.direction,
             )
 
             if action.action == "CLOSE" and trade.broker_order_id:
@@ -489,6 +508,7 @@ class OrderExecutor:
         self,
         *,
         instrument: str,
+        direction: Direction,
         units: float,
         stop_loss: float,
         client_order_id: str,
@@ -510,14 +530,14 @@ class OrderExecutor:
                     order_id=existing.broker_order_id,
                     client_order_id=client_order_id,
                     instrument=instrument,
-                    direction="BUY",
+                    direction=direction,
                     units=units,
                     fill_price=existing.fill_price,
                     timestamp=existing.fill_time or datetime.now(UTC),
                     error_message=None,
                 )
-        except Exception:
-            # Order doesn't exist yet — this is expected for new orders
+        except OrderNotFoundError:
+            # Order doesn't exist yet — expected for new orders
             pass
 
         return self._broker.place_market_order(
