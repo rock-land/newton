@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 09:30 | Stage 6 / T-606 | /ship T-606 | Shipped backtest API endpoints — v0.6.6 |
+| 2026-03-06 09:00 | Stage 6 / T-606 | /task T-606 | Implement backtest API endpoints (POST run, GET results) |
 | 2026-03-06 08:00 | Stage 6 / T-605 | /ship T-605 | Shipped regime-aware reporting — v0.6.5 |
 | 2026-03-06 07:30 | Stage 6 / T-605 | /task T-605 | Implement regime-aware reporting in report.py |
 | 2026-03-06 07:00 | Stage 6 / T-604 | /ship T-604 | Shipped purged K-fold cross-validation — v0.6.4 |
