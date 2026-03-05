@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 10:30 | Stage 6 / T-607 | /ship T-607 | Shipped Backtest Runner UI — v0.6.7 |
+| 2026-03-06 10:00 | Stage 6 / T-607 | /task T-607 | Implement Backtest Runner UI (React page with form, equity chart, metrics, trade list) |
 | 2026-03-06 09:30 | Stage 6 / T-606 | /ship T-606 | Shipped backtest API endpoints — v0.6.6 |
 | 2026-03-06 09:00 | Stage 6 / T-606 | /task T-606 | Implement backtest API endpoints (POST run, GET results) |
 | 2026-03-06 08:00 | Stage 6 / T-605 | /ship T-605 | Shipped regime-aware reporting — v0.6.5 |
