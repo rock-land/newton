@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 07:00 | Stage 6 / T-604 | /ship T-604 | Shipped purged K-fold cross-validation — v0.6.4 |
+| 2026-03-06 06:30 | Stage 6 / T-604 | /task T-604 | Implement purged K-fold cross-validation |
 | 2026-03-06 06:00 | Stage 6 / T-603 | /ship T-603 | Shipped performance metrics — v0.6.3 |
 | 2026-03-06 05:30 | Stage 6 / T-603 | /task T-603 | Implement performance metrics in metrics.py |
 | 2026-03-06 05:00 | Stage 6 / T-602 | /ship T-602 | Shipped backtest engine — v0.6.2 |
