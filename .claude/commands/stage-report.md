@@ -8,8 +8,8 @@ You compile the code review and red team review into a unified stage report with
 
 1. Read `TASKS.md` — identify the current stage, all tasks, and their statuses
 2. Read `DECISIONS.md` — for context on constraints and precedents
-3. Read `REVIEWS.md` — find both the **Code Review** and **Red Team Review** for the current stage
-4. If either review is missing from REVIEWS.md: **STOP.** Report which review(s) are missing and instruct the user to run them first:
+3. Read `docs/reviews/stage-{N}.md` (where N is the current stage number) — find both the **Code Review** and **Red Team Review** for the current stage
+4. If the stage review file doesn't exist or either review section is missing: **STOP.** Report which review(s) are missing and instruct the user to run them first:
    - Missing code review → "Run `/review` first."
    - Missing red team review → "Run `/red-review` first."
    - Missing both → "Run `/review` then `/red-review` first."
@@ -77,10 +77,10 @@ Based on the unified findings:
 
 ## Output Format
 
-Write the unified report to `REVIEWS.md` under the current stage heading in a **Stage Report** subsection, and also display it to the user:
+Write the unified report to `docs/reviews/stage-{N}.md` in a **Stage Report** subsection (appended to the existing file), and also display it to the user:
 
 ```markdown
-### Stage Report
+## Stage Report
 
 - **Date:** YYYY-MM-DD
 - **Status:** PENDING
@@ -140,7 +140,7 @@ Write the unified report to `REVIEWS.md` under the current stage heading in a **
 ## After Writing the Report
 
 ### If READY:
-- Remind the user: "Stage report recorded as PENDING in REVIEWS.md. To approve: update the Status to `APPROVED` and add your sign-off date. Then run the stage gate task."
+- Remind the user: "Stage report recorded as PENDING in `docs/reviews/stage-{N}.md`. To approve: update the Status to `APPROVED` and add your sign-off date. Then run the stage gate task." Also update the index table in `REVIEWS.md` with the new stage entry and its status.
 - Suggest next action: "Run `/task T-NG` to execute the stage gate."
 
 ### If READY WITH CONDITIONS:
@@ -151,7 +151,7 @@ Write the unified report to `REVIEWS.md` under the current stage heading in a **
 
 ### If NOT READY:
 - Add the remediation tasks to `TASKS.md` in the current stage's task table (appended at the end, before the stage gate)
-- Report: "Remediation tasks added to TASKS.md. Complete them, then run `/verify-fixes` to confirm the fixes are clean."
+- Report: "Remediation tasks added to TASKS.md. Complete them, then run `/verify-fixes` to confirm the fixes are clean." Also update the index table in `REVIEWS.md` with the new stage entry and its status.
 - Suggest next action: "Run `/task` to start working on the fix tasks (they will be batched together automatically)."
 
 ## Log to Journal
@@ -164,9 +164,9 @@ Add an entry to `JOURNAL.md`:
 ## What You Do
 
 - Interview the user for additional context using AskUserQuestion
-- Read and synthesize both reviews from REVIEWS.md
+- Read and synthesize both reviews from `docs/reviews/stage-{N}.md`
 - Produce the unified stage report
-- Write the report to REVIEWS.md
+- Write the report to `docs/reviews/stage-{N}.md` and update the index in `REVIEWS.md`
 - Add remediation tasks to TASKS.md when verdict is NOT READY
 - Present findings and recommendations to the user
 - Suggest concrete next actions

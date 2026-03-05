@@ -13,7 +13,7 @@ If no argument is provided, determine the next stage automatically from `TASKS.m
 1. Read `TASKS.md` — identify all existing stages, their statuses, and the backlog
 2. Read `SPEC.md` — understand the full project scope
 3. Read `DECISIONS.md` — for applicable constraints
-4. Read `REVIEWS.md` — check stage approval status
+4. Read `docs/reviews/stage-{N-1}.md` (previous stage review file) — check stage approval status. Also check `REVIEWS.md` index for quick reference.
 5. Determine which stage to initialize (from argument or auto-detect)
 
 ## Prerequisite Checks
@@ -23,7 +23,7 @@ If no argument is provided, determine the next stage automatically from `TASKS.m
 - Verify no Stage 1 section already exists in `TASKS.md`
 
 ### For Stage N (N > 1):
-- Check `REVIEWS.md` for a **Stage Report** on Stage N-1 with status `APPROVED`
+- Check `docs/reviews/stage-{N-1}.md` for a **Stage Report** with status `APPROVED`
 - If not approved: **STOP.** Report: "Stage [N-1] must have an APPROVED stage report before initializing Stage [N]. Run the review pipeline: `/review` → `/red-review` → `/stage-report`, then sign off."
 - Verify the previous stage's gate task is `DONE` in `TASKS.md`
 - Verify the previous stage branch has been merged to `main`
@@ -32,7 +32,7 @@ If no argument is provided, determine the next stage automatically from `TASKS.m
 
 ### For existing project bootstrap (Stage 1 with Baseline Audit):
 
-If `REVIEWS.md` contains a **Baseline Audit** section, use its findings to generate Stage 1 tasks:
+If `docs/reviews/baseline-audit.md` exists, use its findings to generate Stage 1 tasks:
 - Critical and High findings become fix/improvement tasks
 - Medium findings can be included at the user's discretion
 - Group related findings into single tasks where it makes sense

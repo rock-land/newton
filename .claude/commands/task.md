@@ -19,7 +19,7 @@ The user may optionally provide a task ID (e.g., `T-101`). This is: $ARGUMENTS
 3. If the task status is `DONE`, stop and report — no work needed
 4. Read `SPEC.md` sections relevant to the task
 5. Read `DECISIONS.md` for applicable constraints
-6. **Read `REVIEWS.md` and run the stage gate check (see below)**
+6. **Read `docs/reviews/stage-{N}.md` (where N is the relevant stage number) and run the stage gate check (see below)**
 7. **Stage initialization check (see below)**
 8. **Branch check (see below)**
 
@@ -54,15 +54,15 @@ Report which branch you're on before proceeding.
 Before starting any work, determine which stage the task belongs to by its position in `TASKS.md`.
 
 **If the task belongs to a different stage than the most recently completed stage:**
-- Check `REVIEWS.md` for a **Stage Report** entry on the previous stage with status `APPROVED`
+- Check `docs/reviews/stage-{N-1}.md` for a **Stage Report** entry with status `APPROVED`
 - If no approved stage report exists: **STOP. Do not proceed.**
 - Report: "Stage [N] review pipeline is required before starting Stage [N+1] work. Run `/review` → `/red-review` → `/stage-report`, then get sign-off on the stage report."
 
 **If this is the last non-gate task in the current stage** (i.e., all other non-gate tasks in this stage are DONE):
 - After completing the test phase, add a prominent reminder:
 - "All implementation tasks for Stage [N] are now complete. Before running the stage gate, run the stage review pipeline:"
-- "1. `/review` — code review (writes to REVIEWS.md)"
-- "2. `/red-review` — adversarial red team review (runs as subagent in fresh context, writes to REVIEWS.md)"
+- "1. `/review` — code review (writes to `docs/reviews/stage-{N}.md`)"
+- "2. `/red-review` — adversarial red team review (runs as subagent in fresh context, writes to `docs/reviews/stage-{N}.md`)"
 - "3. `/stage-report` — compiles both reviews into a unified report with action items"
 - "Sign off on the stage report before proceeding to the stage gate."
 
@@ -88,7 +88,7 @@ Map the task's **scope** column to the phases needed:
 | `infra` or `ci` | architect → implement → test |
 
 For **stage gate** tasks:
-- First check `REVIEWS.md` for an APPROVED **Stage Report** for the current stage
+- First check `docs/reviews/stage-{N}.md` for an APPROVED **Stage Report** for the current stage
 - If no approved stage report: **STOP.** Report: "Stage gate requires an approved stage report. Run `/review` → `/red-review` → `/stage-report`."
 - If approved: run test → spec-check (validation only, no implementation)
 
@@ -224,7 +224,7 @@ This will commit to the stage branch, push, bump VERSION, and mark the task DONE
 - Skip the quality gate in the test phase
 - Skip the stage gate enforcement check
 - Skip the stage initialization check
-- Allow a stage gate to run without an approved stage report in REVIEWS.md
+- Allow a stage gate to run without an approved stage report in `docs/reviews/stage-{N}.md`
 - Mark a task DONE in TASKS.md without the user's explicit approval
 - Push to remote without the user's explicit approval
 - Commit without the user's explicit approval

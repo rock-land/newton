@@ -5,6 +5,31 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 02:30 | Stage 5 / T-5G | /ship T-5G | Shipped stage gate — v0.5.12, merged to main, tagged |
+| 2026-03-06 02:00 | Stage 5 / T-5G | /task T-5G | Stage gate: quality gate validation for Stage 5 |
+| 2026-03-06 01:30 | Stage 5 / FIX tasks | /verify-fixes | Verified 3 fix tasks: PASS — all Critical/High findings resolved |
+| 2026-03-06 01:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /ship T-508-FIX1 | Shipped batched fix tasks (FIX1+FIX2+FIX3) — v0.5.11 |
+| 2026-03-06 00:00 | Stage 5 / T-508-FIX1,FIX2,FIX3 | /task | Batched fix tasks: Binance adapter, position sizing, risk/circuit breaker compliance |
+| 2026-03-05 23:00 | Stage 5 / — | /stage-report | Compiled stage report: NOT READY — 4 critical, 6 high; 3 remediation tasks added (T-508-FIX1, FIX2, FIX3) |
+| 2026-03-05 22:00 | Stage 5 / — | /red-review | Red team review completed: FAIL — 5 critical, 7 high findings |
+| 2026-03-05 21:00 | Stage 5 / — | /review | Code review completed: Needs fixes (W-1: direction-blind trailing stops) |
+| 2026-03-05 20:00 | Stage 5 / T-508 | /ship T-508 | Shipped trading API endpoints and kill switch — v0.5.8 |
+| 2026-03-05 19:00 | Stage 5 / T-508 | /task T-508 | Trading API endpoints and kill switch — GET /trades, POST/DELETE /kill, GET/PUT /config/risk with audit logging |
+| 2026-03-05 18:00 | Stage 5 / T-507 | /ship T-507 | Shipped position reconciliation loop — v0.5.7 |
+| 2026-03-05 17:00 | Stage 5 / T-507 | /task T-507 | Position reconciliation loop in reconciler.py — broker vs internal position comparison, MATCH/SYSTEM_EXTRA/BROKER_EXTRA classification |
+| 2026-03-05 16:00 | Stage 5 / T-506 | /ship T-506 | Shipped order execution orchestrator — v0.5.6 |
+| 2026-03-05 15:00 | Stage 5 / T-506 | /task T-506 | Order execution orchestrator in executor.py — signal → pre-trade → sizing → order → stop-loss → trade record |
+| 2026-03-05 14:00 | Stage 5 / T-505 | /ship T-505 | Shipped circuit breaker system — v0.5.5 |
+| 2026-03-05 13:00 | Stage 5 / T-505 | /task T-505 | Circuit breaker system in circuit_breaker.py — 5 breakers, per-instrument + portfolio scope, auto/manual reset |
+| 2026-03-04 12:00 | Stage 5 / T-504 | /ship T-504 | Shipped risk management engine — v0.5.4 |
+| 2026-03-04 11:30 | Stage 5 / T-504 | /task T-504 | Risk management engine in risk.py — config loading, pre-trade checks, Kelly sizing, in-trade controls |
+| 2026-03-04 11:00 | Stage 5 / T-503 | /ship T-503 | Shipped BinanceSpotAdapter — v0.5.3 |
+| 2026-03-04 10:30 | Stage 5 / T-503 | /task T-503 | Implement BinanceSpotAdapter in broker_binance.py — Binance REST broker adapter |
+| 2026-03-04 10:00 | Stage 5 / T-502 | /ship T-502 | Shipped OandaAdapter — v0.5.2 |
+| 2026-03-04 09:30 | Stage 5 / T-502 | /task T-502 | Implement OandaAdapter in broker_oanda.py — Oanda v20 REST broker adapter |
+| 2026-03-04 09:00 | Stage 5 / T-501 | /ship T-501 | Shipped BrokerAdapter protocol and domain models — v0.5.1 |
+| 2026-03-04 08:30 | Stage 5 / T-501 | /task T-501 | Implement BrokerAdapter protocol and domain models in broker_base.py |
+| 2026-03-04 08:00 | Stage 5 / — | /stage-init | Initialized Stage 5: Trading Engine with 8 tasks + 1 gate |
 | 2026-03-05 07:00 | Stage 4 / T-4G | /ship T-4G | Shipped Stage 4 gate — v0.4.8, merged to main |
 | 2026-03-05 06:30 | Stage 4 / T-4G | /task T-4G | Stage gate validation — all criteria pass |
 | 2026-03-05 06:00 | Stage 4 / FIX tasks | /verify-fixes | Verified 2 fix tasks (T-405-FIX1/FIX2): PASS — all 10 findings resolved, no regressions |

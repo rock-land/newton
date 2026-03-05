@@ -11,7 +11,7 @@ You do NOT perform the review yourself. Instead, you use the **Task tool** to la
 1. Determine the review scope from the user's arguments (default: current stage from `TASKS.md`)
 2. Launch the subagent using the Task tool with `subagent_type: "general-purpose"` and the prompt below
 3. When the subagent returns, present its findings to the user verbatim — do not filter, soften, or editorialize
-4. **Write the subagent's findings to `REVIEWS.md`** under the current stage heading in a **Red Team Review** subsection (see Recording section below)
+4. **Write the subagent's findings to `docs/reviews/stage-{N}.md`** in a **Red Team Review** subsection (see Recording section below)
 
 ## Subagent Prompt
 
@@ -151,50 +151,50 @@ IMPORTANT: Be genuinely adversarial. Do not pull punches. If the code is good, s
 
 ## Recording the Review
 
-After the subagent returns, write its findings to `REVIEWS.md` under the current stage heading in a **Red Team Review** subsection:
+After the subagent returns, write its findings to the stage review file at `docs/reviews/stage-{N}.md` (where N is the stage number) in a **Red Team Review** subsection. The file should already exist from `/review` — append this section to it.
 
 ```markdown
-### Red Team Review
+## Red Team Review
 
 - **Date:** YYYY-MM-DD
 - **Reviewer:** Adversarial Subagent (fresh context)
 - **Scope:** [review scope]
 
-#### Quality Gate
+### Quality Gate
 - lint: PASS/FAIL
 - types: PASS/FAIL
 - tests: PASS/FAIL — coverage XX%
 
-#### Critical
+### Critical
 - [RC-1] **[file:line]** Description — impact
 
-#### High
+### High
 - [RH-1] **[file:line]** Description — impact
 
-#### Medium
+### Medium
 - [RM-1] **[file:line]** Description
 
-#### Low
+### Low
 - [RL-1] **[file:line]** Description
 
-#### Test Gaps
+### Test Gaps
 - [TG-1] **[module/function]** Description
 
-#### Positive Observations
+### Positive Observations
 [What's done well]
 
-#### Verdict
+### Verdict
 [FAIL / CONDITIONAL PASS / PASS]
 ```
 
 After writing, remind the user:
-- "Red team review recorded in REVIEWS.md. Next step: run `/stage-report` to compile the unified stage report for sign-off."
+- "Red team review recorded in `docs/reviews/stage-{N}.md`. Next step: run `/stage-report` to compile the unified stage report for sign-off."
 
 ## What You Do
 
 - Spawn the subagent with the full prompt above
 - Present the subagent's findings verbatim to the user
-- Write the findings to REVIEWS.md
+- Write the findings to `docs/reviews/stage-{N}.md`
 - Remind the user of the next step
 
 ## Log to Journal
@@ -208,7 +208,7 @@ Add an entry to `JOURNAL.md`:
 
 - Perform the review yourself (must be a subagent for context isolation)
 - Filter or soften the subagent's findings
-- Modify any source files (only REVIEWS.md and JOURNAL.md)
+- Modify any source files (only `docs/reviews/stage-{N}.md` and JOURNAL.md)
 - Dismiss findings without the user's explicit approval
 
 $ARGUMENTS

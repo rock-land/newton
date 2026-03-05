@@ -42,9 +42,9 @@ Record architectural decisions discovered in the codebase:
 - Patterns and conventions already established
 - Any constraints visible in the code (e.g., specific DB choice, API versioning scheme)
 
-### 4. Baseline Audit → REVIEWS.md
+### 4. Baseline Audit → docs/reviews/baseline-audit.md
 
-Perform a structured audit of the existing codebase and write the findings to `REVIEWS.md` as a **Baseline Audit**. This is not a stage review — it's a one-time assessment of the project's current state that feeds into Stage 1 task generation.
+Perform a structured audit of the existing codebase and write the findings to `docs/reviews/baseline-audit.md` as a **Baseline Audit**. This is not a stage review — it's a one-time assessment of the project's current state that feeds into Stage 1 task generation. Also add an entry to the `REVIEWS.md` index table.
 
 Run the quality gate (if tools are available) and then audit:
 
@@ -55,10 +55,10 @@ Run the quality gate (if tools are available) and then audit:
 - **Spec compliance** — if SPEC.md exists, check how the code aligns with it
 - **Tech debt** — TODO/FIXME comments, deprecated dependencies, workarounds
 
-Write to `REVIEWS.md` in this format:
+Write to `docs/reviews/baseline-audit.md` in this format:
 
 ```markdown
-## Baseline Audit
+# Baseline Audit
 
 - **Date:** YYYY-MM-DD
 - **Scope:** Full codebase audit (pre-governance)

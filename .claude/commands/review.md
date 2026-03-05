@@ -89,38 +89,40 @@ Report findings in structured format with severity categories:
 
 ## Recording the Review
 
-After completing the audit, append findings to `REVIEWS.md` under the current stage heading in a **Code Review** subsection. Use this format:
+After completing the audit, write findings to the stage review file at `docs/reviews/stage-{N}.md` (where N is the stage number) in a **Code Review** subsection. Create the file if it doesn't exist. If the file already exists (e.g., from a previous review), append the new section. Also update the index table in `REVIEWS.md` to include the new stage entry.
+
+Use this format:
 
 ```markdown
-## Stage N: [Stage Name]
+# Stage N: [Stage Name]
 
-### Code Review
+## Code Review
 
 - **Date:** YYYY-MM-DD
 - **Scope:** [what was reviewed — full stage / specific task cluster]
 
-#### Findings
+### Findings
 
-##### Critical
+#### Critical
 - [C-1] **[file:line]** Description
 
-##### Warning
+#### Warning
 - [W-1] **[file:line]** Description
 
-##### Note
+#### Note
 - [N-1] **[file:line]** Description
 
-#### Quality Gate
+### Quality Gate
 - lint: PASS/FAIL
 - types: PASS/FAIL
 - tests: PASS/FAIL — coverage XX%
 
-#### Verdict
+### Verdict
 [Ready for merge / Needs fixes / Needs discussion]
 ```
 
-After writing the review to `REVIEWS.md`, remind the user:
-- "Code review recorded in REVIEWS.md. Next step: run `/red-review` for the adversarial review, then `/stage-report` to compile the unified stage report for sign-off."
+After writing the review, remind the user:
+- "Code review recorded in `docs/reviews/stage-{N}.md`. Next step: run `/red-review` for the adversarial review, then `/stage-report` to compile the unified stage report for sign-off."
 
 ## Log to Journal
 

@@ -14,7 +14,7 @@ Newton is a multi-stage trading system built with:
 - **Backtesting** (Stage 6): Historical simulation, performance metrics
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 4 complete (v0.4.8)** — UAT & Admin UI. Stage 5 queued. → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 5 complete (v0.5.12)** — Trading Engine. Stage 6 queued (Backtesting). → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -198,6 +198,7 @@ Newton uses `0.{STAGE}.{TASK}` versioning:
 - `0.2.8` = Stage 2 complete
 - `0.3.10` = Stage 3 complete
 - `0.4.8` = Stage 4 complete
+- `0.5.12` = Stage 5 complete
 - Fix releases: `0.4.6` = Stage 4, fix tasks shipped
 
 See [CHANGELOG](./CHANGELOG.md) for release history.
