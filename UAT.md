@@ -142,6 +142,20 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 
 ---
 
+## H. Trading Engine API (Stage 5)
+
+| Pass | Test | What to look for | Notes |
+|------|------|------------------|-------|
+| [ ] | GET /trades | `curl http://localhost:8000/api/v1/trades` returns `{"trades":[],"count":0}` (200 OK) when no trades exist | Requires trading service configured |
+| [ ] | GET /trades filters | `?instrument=EUR_USD`, `?status=OPEN`, `?broker=oanda`, `?limit=10` all filter correctly | |
+| [ ] | POST /kill | `curl -X POST http://localhost:8000/api/v1/kill -H 'Content-Type: application/json' -d '{"reason":"test"}'` returns `{"active":true,"action":"activated",...}` | Activates system-wide kill switch |
+| [ ] | DELETE /kill (no confirm) | `curl -X DELETE http://localhost:8000/api/v1/kill` returns 400 with `confirm=true` required | Safety guard |
+| [ ] | DELETE /kill (with confirm) | `curl -X DELETE 'http://localhost:8000/api/v1/kill?confirm=true'` deactivates kill switch | |
+| [ ] | GET /config/risk | Returns full risk config with `defaults` and `portfolio` sections | |
+| [ ] | PUT /config/risk | `curl -X PUT ... -d '{"defaults":{"hard_stop_pct":0.03},"reason":"test"}'` updates config and returns new values | Validates against Pydantic bounds |
+| [ ] | PUT /config/risk (invalid) | Sending `{"defaults":{"hard_stop_pct":99.0}}` returns 422 validation error | |
+| [ ] | Swagger docs | Trading endpoints (`/trades`, `/kill`, `/config/risk`) appear in Swagger UI at `/api/docs` | |
+
 ## G. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

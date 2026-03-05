@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-05 20:00 | Stage 5 / T-508 | /ship T-508 | Shipped trading API endpoints and kill switch — v0.5.8 |
+| 2026-03-05 19:00 | Stage 5 / T-508 | /task T-508 | Trading API endpoints and kill switch — GET /trades, POST/DELETE /kill, GET/PUT /config/risk with audit logging |
 | 2026-03-05 18:00 | Stage 5 / T-507 | /ship T-507 | Shipped position reconciliation loop — v0.5.7 |
 | 2026-03-05 17:00 | Stage 5 / T-507 | /task T-507 | Position reconciliation loop in reconciler.py — broker vs internal position comparison, MATCH/SYSTEM_EXTRA/BROKER_EXTRA classification |
 | 2026-03-05 16:00 | Stage 5 / T-506 | /ship T-506 | Shipped order execution orchestrator — v0.5.6 |

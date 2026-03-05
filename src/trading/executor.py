@@ -96,6 +96,15 @@ class TradeStore(Protocol):
 
     def get_trade(self, client_order_id: str) -> TradeRecord | None: ...
 
+    def list_trades(
+        self,
+        *,
+        instrument: str | None = None,
+        status: str | None = None,
+        broker: str | None = None,
+        limit: int = 100,
+    ) -> list[TradeRecord]: ...
+
 
 class InMemoryTradeStore:
     """In-memory implementation of TradeStore for testing."""
@@ -123,6 +132,24 @@ class InMemoryTradeStore:
 
     def get_trade(self, client_order_id: str) -> TradeRecord | None:
         return self._trades.get(client_order_id)
+
+    def list_trades(
+        self,
+        *,
+        instrument: str | None = None,
+        status: str | None = None,
+        broker: str | None = None,
+        limit: int = 100,
+    ) -> list[TradeRecord]:
+        trades = list(self._trades.values())
+        if instrument is not None:
+            trades = [t for t in trades if t.instrument == instrument]
+        if status is not None:
+            trades = [t for t in trades if t.status == status]
+        if broker is not None:
+            trades = [t for t in trades if t.broker == broker]
+        trades.sort(key=lambda t: t.created_at, reverse=True)
+        return trades[:limit]
 
 
 # ---------------------------------------------------------------------------
