@@ -5,6 +5,11 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 14:00 | Stage 6 / T-608 | /ship T-608 | Shipped backtest results viewer and comparison UI — v0.6.8 |
+| 2026-03-06 13:00 | Stage 6 / T-608 | /task T-608 | Implement backtest results viewer and comparison UI (client scope) |
+| 2026-03-06 12:00 | Stage 6 / — | /stage-report | Compiled stage report: NOT READY — 4C/5H/5M findings, 3 remediation tasks |
+| 2026-03-06 11:30 | Stage 6 / — | /red-review | Red team review completed: FAIL — 4 critical findings (interval mismatch, missing risk-free rate, missing exit costs, thread safety) |
+| 2026-03-06 11:00 | Stage 6 / — | /review | Code review completed: Ready for merge (1 recommended fix: W-1 interval mismatch) |
 | 2026-03-06 10:30 | Stage 6 / T-607 | /ship T-607 | Shipped Backtest Runner UI — v0.6.7 |
 | 2026-03-06 10:00 | Stage 6 / T-607 | /task T-607 | Implement Backtest Runner UI (React page with form, equity chart, metrics, trade list) |
 | 2026-03-06 09:30 | Stage 6 / T-606 | /ship T-606 | Shipped backtest API endpoints — v0.6.6 |

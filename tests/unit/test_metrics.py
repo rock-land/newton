@@ -10,6 +10,7 @@ import pytest
 
 from src.backtest.engine import BacktestConfig, BacktestResult, BacktestTrade
 from src.backtest.metrics import (
+    CalibrationDecile,
     GateEvaluation,
     MetricGateResult,
     PerformanceMetrics,
@@ -319,6 +320,36 @@ class TestCalibrationError:
             predicted_probabilities=probs,
         )
         assert m.calibration_error > 0.5
+
+    def test_calibration_deciles_populated(self) -> None:
+        """When probabilities are provided, calibration_deciles are returned."""
+        trades = [_trade(100.0) for _ in range(60)] + [_trade(-50.0) for _ in range(40)]
+        probs = [0.6] * 100
+        result = _result_with_trades(trades)
+        m = compute_metrics(
+            result, annualization_factor=math.sqrt(252),
+            predicted_probabilities=probs,
+        )
+        assert len(m.calibration_deciles) > 0
+        decile = m.calibration_deciles[0]
+        assert isinstance(decile, CalibrationDecile)
+        assert decile.count == 100  # all in one bin
+        assert decile.bin_index == 6  # 0.6 falls in bin 6
+        assert abs(decile.predicted_mid - 0.6) < 0.01
+        assert abs(decile.observed_freq - 0.6) < 0.01
+
+    def test_calibration_deciles_empty_without_probabilities(self) -> None:
+        """Without predicted probabilities, calibration_deciles is empty."""
+        trades = [_trade(100.0)]
+        result = _result_with_trades(trades)
+        m = compute_metrics(result, annualization_factor=math.sqrt(252))
+        assert m.calibration_deciles == ()
+
+    def test_calibration_decile_frozen(self) -> None:
+        """CalibrationDecile is a frozen dataclass."""
+        d = CalibrationDecile(bin_index=0, predicted_mid=0.05, observed_freq=0.1, count=5)
+        with pytest.raises(FrozenInstanceError):
+            d.count = 10  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------

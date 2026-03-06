@@ -171,6 +171,13 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Trade list table | Table shows all trades with entry/exit times, prices, direction badges (BUY green, SELL red), PnL (colored), costs, exit reason, regime | |
 | [ ] | Error handling | Stop API server, click Run — error message appears with "Is the API server running?" hint | |
 | [ ] | Invalid date range | Set start after end date — server returns 400 error, displayed in UI | |
+| [ ] | Regime overlay on equity curve | Equity chart shows colored background bands for different regime periods (trending, mean-reverting, volatile, etc.) | T-608 |
+| [ ] | Calibration chart | Calibration tab shows scatter plot of predicted vs observed frequencies by decile; dashed 45° reference line visible | T-608 |
+| [ ] | Regime breakdown table | Regime Breakdown tab shows per-regime metrics (Sharpe, PF, win rate, trade count, PnL); low-sample regimes have orange badge | T-608 |
+| [ ] | Candlestick chart with trades | Candlestick tab shows OHLCV candlestick chart with trade entry markers as green/red reference lines | T-608 |
+| [ ] | Backtest history | History tab lists past backtest runs with instrument, dates, status, and return; clicking a run loads its full results | T-608 |
+| [ ] | Backtest comparison | Compare tab: select two runs from dropdowns, see side-by-side metric diffs with green (better) / red (worse) highlighting; overlaid equity curves | T-608 |
+| [ ] | Paginated trade table | Trades tab shows paginated table (50 per page) with previous/next navigation and page indicator | T-608 |
 
 ## H. Cross-Cutting Checks
 

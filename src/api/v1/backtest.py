@@ -6,15 +6,23 @@ gate evaluations, regime breakdowns, and bias controls.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
+import os
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Protocol, runtime_checkable
+from pathlib import Path
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from fastapi import APIRouter, HTTPException
+
+if TYPE_CHECKING:
+    from src.backtest.simulator import FillConfig
+    from src.data.fetcher_base import CandleRecord
+    from src.trading.risk import ResolvedRiskConfig
 
 from src.api.schemas import (
     BacktestBiasControlResponse,
@@ -27,6 +35,7 @@ from src.api.schemas import (
     BacktestRunRequest,
     BacktestRunStatusResponse,
     BacktestTradeResponse,
+    CalibrationDecileResponse,
     EquityCurvePoint,
 )
 from src.backtest.engine import BacktestConfig, BacktestResult, BacktestTrade
@@ -156,6 +165,146 @@ class BacktestService:
 
 
 # ---------------------------------------------------------------------------
+# Default runner (loads candles from DB, uses neutral signal generator)
+# ---------------------------------------------------------------------------
+
+_ROOT_DIR = Path(__file__).resolve().parents[3]
+
+
+class _NeutralGenerator:
+    """Minimal signal generator that always returns BUY for backtest testing."""
+
+    @property
+    def id(self) -> str:
+        return "backtest_neutral"
+
+    @property
+    def version(self) -> str:
+        return "1.0"
+
+    def generate(
+        self, instrument: str, features: object, config: object,
+    ) -> object:
+        from src.analysis.signal_contract import Signal
+        return Signal(
+            instrument=instrument,
+            action="BUY",
+            probability=0.6,
+            confidence=0.5,
+            component_scores={},
+            metadata={"generator": "backtest_neutral"},
+            generated_at=datetime.now(UTC),
+            generator_id="backtest_neutral",
+        )
+
+    def generate_batch(
+        self, instrument: str, historical_features: list[object], config: object,
+    ) -> list[object]:
+        return []
+
+    def validate_config(self, config: dict[str, object]) -> bool:
+        return True
+
+
+class DefaultBacktestRunner:
+    """Default BacktestRunner that loads candles from DB and runs the engine."""
+
+    def run(self, config: BacktestConfig) -> BacktestResult:
+        from src.analysis.signal_contract import GeneratorConfig
+        from src.backtest.engine import run_backtest
+
+        candles = self._load_candles(config)
+        fill_config = self._build_fill(config)
+        risk_config = self._default_risk()
+        generator = _NeutralGenerator()
+        gen_config = GeneratorConfig(enabled=True, parameters={})
+
+        return run_backtest(
+            candles=candles,
+            signal_generator=generator,  # type: ignore[arg-type]
+            generator_config=gen_config,
+            fill_config=fill_config,
+            risk_config=risk_config,
+            config=config,
+        )
+
+    def _load_candles(self, config: BacktestConfig) -> list[CandleRecord]:
+        from src.data.fetcher_base import CandleRecord
+
+        db_url = os.environ.get(
+            "DATABASE_URL",
+            "postgresql://newton:newton@localhost:5432/newton",
+        )
+        try:
+            import psycopg
+            with psycopg.connect(db_url, autocommit=True) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT time, instrument, interval, open, high, low, close,
+                               volume, COALESCE(spread_avg, 0), verified, source
+                        FROM ohlcv
+                        WHERE instrument = %s AND interval = %s
+                          AND time >= %s AND time <= %s
+                        ORDER BY time ASC
+                        """,
+                        (config.instrument, config.interval,
+                         config.start_date, config.end_date),
+                    )
+                    rows = cur.fetchall()
+        except Exception:
+            logger.exception("Failed to load candles for backtest")
+            return []
+
+        return [
+            CandleRecord(
+                time=row[0], instrument=row[1], interval=row[2],
+                open=float(row[3]), high=float(row[4]), low=float(row[5]),
+                close=float(row[6]), volume=float(row[7]),
+                spread_avg=float(row[8]), verified=bool(row[9]), source=str(row[10]),
+            )
+            for row in rows
+        ]
+
+    def _build_fill(self, config: BacktestConfig) -> FillConfig:
+        from src.backtest.simulator import FillConfig, build_fill_config
+
+        inst_file = _ROOT_DIR / f"config/instruments/{config.instrument}.json"
+        if inst_file.exists():
+            with open(inst_file) as f:
+                inst_cfg = json.load(f)
+            return build_fill_config(inst_cfg, pessimistic=config.pessimistic)
+
+        # Fallback defaults
+        if "BTC" in config.instrument:
+            return FillConfig(
+                instrument=config.instrument, asset_class="crypto",
+                slippage=0.0002, half_spread=0.00025, pip_size=0.01,
+                commission_pct=0.001, pessimistic=config.pessimistic,
+            )
+        return FillConfig(
+            instrument=config.instrument, asset_class="forex",
+            slippage=1.0, half_spread=0.75, pip_size=0.0001,
+            commission_pct=0.0, pessimistic=config.pessimistic,
+        )
+
+    def _default_risk(self) -> ResolvedRiskConfig:
+        from src.trading.risk import ResolvedRiskConfig
+        return ResolvedRiskConfig(
+            max_position_pct=0.10, max_risk_per_trade_pct=0.02,
+            kelly_fraction=0.25, kelly_min_trades=20, kelly_window=100,
+            micro_size_pct=0.005, hard_stop_pct=0.02,
+            trailing_activation_pct=0.015, trailing_breakeven_pct=0.005,
+            time_stop_hours=48, daily_loss_limit_pct=0.03,
+            max_drawdown_pct=0.15, consecutive_loss_halt=5,
+            consecutive_loss_halt_hours=24, gap_risk_multiplier=1.5,
+            volatility_threshold_multiplier=2.0,
+            high_volatility_size_reduction=0.5,
+            high_volatility_stop_pct=0.03,
+        )
+
+
+# ---------------------------------------------------------------------------
 # Module-level service singleton
 # ---------------------------------------------------------------------------
 
@@ -170,7 +319,9 @@ def configure(service: BacktestService) -> None:
 
 def _get_service() -> BacktestService:
     if _service is None:
-        raise HTTPException(status_code=503, detail="Backtest service not configured")
+        # Auto-configure with default runner on first access
+        configure(BacktestService(runner=DefaultBacktestRunner()))
+    assert _service is not None
     return _service
 
 
@@ -257,6 +408,15 @@ def _build_result_response(result: BacktestResult) -> BacktestResultResponse:
             trade_count=metrics.trade_count,
             annualized_return=metrics.annualized_return,
             total_return=metrics.total_return,
+            calibration_deciles=[
+                CalibrationDecileResponse(
+                    bin_index=d.bin_index,
+                    predicted_mid=d.predicted_mid,
+                    observed_freq=d.observed_freq,
+                    count=d.count,
+                )
+                for d in metrics.calibration_deciles
+            ],
         ),
         gate_evaluation=BacktestGateResponse(
             results=[

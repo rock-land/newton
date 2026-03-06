@@ -17,6 +17,7 @@ Reviews are stored as individual files per stage in `docs/reviews/`:
 | Stage 3: ML Pipeline | [`docs/reviews/stage-3.md`](docs/reviews/stage-3.md) | APPROVED |
 | Stage 4: UAT & Admin UI | [`docs/reviews/stage-4.md`](docs/reviews/stage-4.md) | APPROVED |
 | Stage 5: Trading Engine | [`docs/reviews/stage-5.md`](docs/reviews/stage-5.md) | FIXES_VERIFIED |
+| Stage 6: Backtesting | [`docs/reviews/stage-6.md`](docs/reviews/stage-6.md) | NEEDS_FIXES |
 
 <!--
 Review files are populated automatically by the review pipeline:

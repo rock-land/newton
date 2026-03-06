@@ -18,6 +18,16 @@ from src.backtest.engine import BacktestResult
 
 
 @dataclass(frozen=True)
+class CalibrationDecile:
+    """Per-decile calibration data for calibration plots."""
+
+    bin_index: int  # 0-9
+    predicted_mid: float  # average predicted probability in bin
+    observed_freq: float  # observed win frequency in bin
+    count: int  # number of trades in bin
+
+
+@dataclass(frozen=True)
 class PerformanceMetrics:
     """Per-instrument performance metrics."""
 
@@ -31,6 +41,7 @@ class PerformanceMetrics:
     trade_count: int
     annualized_return: float
     total_return: float
+    calibration_deciles: tuple[CalibrationDecile, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -155,7 +166,7 @@ def compute_metrics(
     expectancy = (win_rate * avg_win) - (loss_rate * avg_loss)
 
     # --- Calibration Error ---
-    cal_error = _compute_calibration_error(trades, predicted_probabilities)
+    cal_error, cal_deciles = _compute_calibration_error(trades, predicted_probabilities)
 
     return PerformanceMetrics(
         sharpe_ratio=sharpe,
@@ -168,6 +179,7 @@ def compute_metrics(
         trade_count=len(trades),
         annualized_return=annualized_return,
         total_return=total_return,
+        calibration_deciles=cal_deciles,
     )
 
 
@@ -370,19 +382,19 @@ def _compute_max_drawdown(equity_values: list[float]) -> float:
 def _compute_calibration_error(
     trades: Sequence[object],
     predicted_probabilities: Sequence[float] | None,
-) -> float:
+) -> tuple[float, tuple[CalibrationDecile, ...]]:
     """Max absolute calibration error per decile bin.
 
-    Returns 0.0 if predicted_probabilities is None or empty.
+    Returns (0.0, ()) if predicted_probabilities is None or empty.
     """
     from src.backtest.engine import BacktestTrade
 
     if predicted_probabilities is None or len(predicted_probabilities) == 0:
-        return 0.0
+        return 0.0, ()
 
     trade_list = [t for t in trades if isinstance(t, BacktestTrade)]
     if len(trade_list) != len(predicted_probabilities):
-        return 0.0
+        return 0.0, ()
 
     # Bin by decile (0.0-0.1, 0.1-0.2, ..., 0.9-1.0)
     bins: dict[int, list[tuple[float, bool]]] = {i: [] for i in range(10)}
@@ -392,7 +404,9 @@ def _compute_calibration_error(
         bins[bin_idx].append((prob, won))
 
     max_error = 0.0
-    for entries in bins.values():
+    deciles: list[CalibrationDecile] = []
+    for bin_idx in range(10):
+        entries = bins[bin_idx]
         if not entries:
             continue
         avg_predicted = sum(p for p, _ in entries) / len(entries)
@@ -400,8 +414,14 @@ def _compute_calibration_error(
         error = abs(avg_predicted - observed_freq)
         if error > max_error:
             max_error = error
+        deciles.append(CalibrationDecile(
+            bin_index=bin_idx,
+            predicted_mid=avg_predicted,
+            observed_freq=observed_freq,
+            count=len(entries),
+        ))
 
-    return max_error
+    return max_error, tuple(deciles)
 
 
 def _compute_correlation(

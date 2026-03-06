@@ -207,6 +207,26 @@ export interface ComputeFeaturesResponse {
   metadata_stored: number;
 }
 
+/* ---------- OHLCV types ---------- */
+
+export interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface OHLCVResponse {
+  instrument: string;
+  interval: string;
+  start: string;
+  limit: number;
+  count: number;
+  data: OHLCVCandle[];
+}
+
 /* ---------- Backtest types ---------- */
 
 export interface BacktestRunRequest {
@@ -237,6 +257,13 @@ export interface BacktestTradeResponse {
   regime_label: string;
 }
 
+export interface CalibrationDecile {
+  bin_index: number;
+  predicted_mid: number;
+  observed_freq: number;
+  count: number;
+}
+
 export interface BacktestMetricsResponse {
   sharpe_ratio: number;
   profit_factor: number;
@@ -248,6 +275,7 @@ export interface BacktestMetricsResponse {
   trade_count: number;
   annualized_return: number;
   total_return: number;
+  calibration_deciles: CalibrationDecile[];
 }
 
 export interface BacktestGateResultResponse {
@@ -334,7 +362,7 @@ export const api = {
     qs.set("interval", params.interval);
     qs.set("start", params.start);
     if (params.limit) qs.set("limit", String(params.limit));
-    return request<unknown>(`/ohlcv/${encodeURIComponent(instrument)}?${qs.toString()}`);
+    return request<OHLCVResponse>(`/ohlcv/${encodeURIComponent(instrument)}?${qs.toString()}`);
   },
 
   uatSuites: () => request<UATSuitesResponse>("/uat/suites"),

@@ -164,6 +164,15 @@ class BacktestTradeResponse(BaseModel):
     regime_label: str
 
 
+class CalibrationDecileResponse(BaseModel):
+    """Per-decile calibration data for calibration plots."""
+
+    bin_index: int
+    predicted_mid: float
+    observed_freq: float
+    count: int
+
+
 class BacktestMetricsResponse(BaseModel):
     """Performance metrics from a backtest run."""
 
@@ -177,6 +186,7 @@ class BacktestMetricsResponse(BaseModel):
     trade_count: int
     annualized_return: float
     total_return: float
+    calibration_deciles: list[CalibrationDecileResponse] = []
 
 
 class BacktestGateResultResponse(BaseModel):

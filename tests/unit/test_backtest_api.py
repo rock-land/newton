@@ -318,12 +318,11 @@ class TestServicePattern:
         service = _setup_service()
         assert _get_service() is service
 
-    def test_unconfigured_returns_503(self) -> None:
+    def test_unconfigured_auto_configures(self) -> None:
+        """When _service is None, _get_service() auto-configures with DefaultBacktestRunner."""
         from src.api.v1 import backtest as bt_module
         bt_module._service = None
-        resp = client.post("/api/v1/backtest", json={
-            "instrument": "EUR_USD",
-            "start_date": "2024-01-01T00:00:00Z",
-            "end_date": "2024-06-01T00:00:00Z",
-        })
-        assert resp.status_code == 503
+        svc = bt_module._get_service()
+        assert svc is not None
+        assert isinstance(svc, bt_module.BacktestService)
+        assert isinstance(svc.runner, bt_module.DefaultBacktestRunner)
