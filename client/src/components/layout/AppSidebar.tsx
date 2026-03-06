@@ -3,6 +3,7 @@ import {
   Activity,
   FlaskConical,
   LayoutDashboard,
+  LineChart,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,6 +21,7 @@ const navItems = [
   { to: "/", label: "Health", icon: Activity },
   { to: "/uat", label: "UAT Runner", icon: FlaskConical },
   { to: "/admin", label: "Admin", icon: LayoutDashboard },
+  { to: "/backtest", label: "Backtest", icon: LineChart },
 ];
 
 export function AppSidebar() {

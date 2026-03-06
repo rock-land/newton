@@ -1,6 +1,6 @@
 # Newton User Acceptance Tests
 
-A practical test plan for human verification. Each item is something you can see, click, or run — not a unit-test assertion. All granular logic tests are covered by `pytest` (429+ tests) and the automated UAT suite (28 behavioral tests).
+A practical test plan for human verification. Each item is something you can see, click, or run — not a unit-test assertion. All granular logic tests are covered by `pytest` (855+ tests) and the automated UAT suite (28 behavioral tests).
 
 **Prerequisites:**
 1. Start TimescaleDB: `docker compose up -d`
@@ -156,7 +156,30 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | PUT /config/risk (invalid) | Sending `{"defaults":{"hard_stop_pct":99.0}}` returns 422 validation error | |
 | [ ] | Swagger docs | Trading endpoints (`/trades`, `/kill`, `/config/risk`) appear in Swagger UI at `/api/docs` | |
 
-## G. Cross-Cutting Checks
+## G. Backtest Runner (Stage 6)
+
+| Pass | Test | What to look for | Notes |
+|------|------|------------------|-------|
+| [ ] | Sidebar nav | "Backtest" link appears in sidebar with chart icon; clicking navigates to `/backtest` | |
+| [ ] | Form controls | Instrument dropdown (EUR/USD, BTC/USD), start/end date pickers, initial equity input, pessimistic mode checkbox, and "Run Backtest" button all render | |
+| [ ] | Run backtest (EUR_USD) | Select EUR_USD, set a 6-month date range, click Run Backtest — button shows loading spinner, then results appear | |
+| [ ] | Run backtest (BTC_USD) | Select BTC_USD, run — results display with BTC-specific metrics | |
+| [ ] | Pessimistic mode | Toggle pessimistic mode on, re-run — metrics show wider spreads/slippage (worse results than normal mode) | |
+| [ ] | Equity curve chart | Area chart renders with time on X-axis, dollar equity on Y-axis; tooltip shows values on hover | |
+| [ ] | Metrics cards | Grid of cards shows: Sharpe, Profit Factor, Max Drawdown, Win Rate, Expectancy, Calmar, Calibration Error, Trades, Return, Ann. Return | |
+| [ ] | Gate badges | Gate evaluation section shows PASS/FAIL badges for each metric gate; overall status badge (ALL PASSED or FAILED) | |
+| [ ] | Trade list table | Table shows all trades with entry/exit times, prices, direction badges (BUY green, SELL red), PnL (colored), costs, exit reason, regime | |
+| [ ] | Error handling | Stop API server, click Run — error message appears with "Is the API server running?" hint | |
+| [ ] | Invalid date range | Set start after end date — server returns 400 error, displayed in UI | |
+| [ ] | Regime overlay on equity curve | Equity chart shows colored background bands for different regime periods (trending, mean-reverting, volatile, etc.) | T-608 |
+| [ ] | Calibration chart | Calibration tab shows scatter plot of predicted vs observed frequencies by decile; dashed 45° reference line visible | T-608 |
+| [ ] | Regime breakdown table | Regime Breakdown tab shows per-regime metrics (Sharpe, PF, win rate, trade count, PnL); low-sample regimes have orange badge | T-608 |
+| [ ] | Candlestick chart with trades | Candlestick tab shows OHLCV candlestick chart with trade entry markers as green/red reference lines | T-608 |
+| [ ] | Backtest history | History tab lists past backtest runs with instrument, dates, status, and return; clicking a run loads its full results | T-608 |
+| [ ] | Backtest comparison | Compare tab: select two runs from dropdowns, see side-by-side metric diffs with green (better) / red (worse) highlighting; overlaid equity curves | T-608 |
+| [ ] | Paginated trade table | Trades tab shows paginated table (50 per page) with previous/next navigation and page indicator | T-608 |
+
+## H. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |
 |------|------|------------------|-------|

@@ -13,6 +13,42 @@ Each stage gets a version entry summarizing all work completed in that stage.
 Categories: Added, Changed, Deprecated, Removed, Fixed, Security
 -->
 
+## [0.6.12] - 2026-03-06
+
+### Added
+- Trade simulation engine (`src/backtest/simulator.py`) — per-instrument fill models for EUR/USD (pip-based slippage/spread) and BTC/USD (%-based + 0.10% taker commission) with pessimistic mode 2× multiplier (T-601)
+- Backtest engine (`src/backtest/engine.py`) — end-to-end simulation: OHLCV → pre-computed features → signal generation → risk checks → fill simulation → position management (hard/trailing/time stops) → equity curve + trade list (T-602)
+- Performance metrics (`src/backtest/metrics.py`) — all SPEC §9.5 metrics: Sharpe ratio (with risk-free rate), profit factor, max drawdown, win rate, Calmar ratio, expectancy, calibration error per decile; hard/informational gate evaluation; portfolio-level metrics (portfolio Sharpe, max portfolio DD, instrument return correlation) (T-603)
+- Purged K-fold cross-validation (`src/backtest/kfold.py`) — K=5 with 48-hour purge zones, per-instrument execution, per-fold metric collection (T-604)
+- Regime-aware reporting (`src/backtest/report.py`) — per-regime performance breakdown (Sharpe, PF, win rate), regime transition timeline, regime-adjusted metrics, low-sample flagging (<20 trades), bias controls checklist per §9.3 (T-605)
+- Backtest API endpoints (`src/api/v1/backtest.py`) — `POST /api/v1/backtest` (run), `GET /api/v1/backtest/{id}` (retrieve), `GET /api/v1/backtest` (list); thread-safe async execution with ThreadPoolExecutor; bounded storage (max 100 runs, LRU eviction) (T-606)
+- Backtest Runner UI (`client/src/pages/BacktestPage.tsx`) — instrument selector, date range picker, pessimistic toggle, equity curve chart (Recharts), metrics summary cards, gate pass/fail badges, trade list table (T-607)
+- Backtest results viewer and comparison UI — regime overlay on equity curve, calibration plot, per-regime breakdown table, candlestick chart with trade markers, backtest history list, side-by-side run comparison with diff highlighting (T-608)
+- 11 Pydantic response schemas for backtest API in `src/api/schemas.py` (T-606)
+- 176 new tests (679 → 855), coverage 92% global
+
+### Changed
+- Sharpe ratio formula includes configurable `risk_free_rate` parameter per SPEC §9.5 (T-608-FIX2)
+- Annualized return uses compound CAGR formula `(1 + total_return)^(periods_per_year / n_periods) - 1` instead of linear scaling (T-608-FIX2)
+- Portfolio Sharpe uses consistent `√365` (calendar days) convention instead of averaging instrument-specific factors (T-608-FIX2)
+- Backtest engine pre-computes features via `TechnicalIndicatorProvider` for realistic signal generation (T-608-FIX3)
+- Backtest engine integrates regime detection via `classify_regime()` for per-trade regime labels (T-608-FIX3)
+
+### Fixed
+- Backtest API interval mismatch `"H1"` → `"1h"` — was producing empty results with real candle data (T-608-FIX1)
+- Thread-unsafe `_RunState` mutation — all state access now guarded by `threading.Lock` (T-608-FIX1)
+- Unbounded in-memory run storage — capped at 100 runs with LRU eviction of oldest completed (T-608-FIX1)
+- API error message leaking internal exception details — now uses generic message with server-side logging (T-608-FIX1)
+- Missing input validation — `initial_equity` upper bound (10M), date range max 5 years (T-608-FIX1)
+- Exit-side transaction costs never applied — `simulate_fill()` now called on exits with reversed direction for slippage, spread, and commission (T-608-FIX3)
+- Cash balance could go negative (implicit leverage) — added `cash >= cost_of_entry` guard before trade entry (T-608-FIX3)
+- Calibration error silently returning 0.0 on length mismatch — now raises `ValueError` (T-608-FIX2)
+- Dead code branch in `_trade_stats()` removed (T-608-FIX3)
+
+### Security
+- Backtest API error responses sanitized — no internal exception details exposed to clients (T-608-FIX1)
+- Input validation at API boundary for initial equity and date range (T-608-FIX1)
+
 ## [0.5.12] - 2026-03-06
 
 ### Added

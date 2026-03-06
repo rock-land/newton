@@ -5,6 +5,31 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 17:30 | Stage 6 / T-6G | /ship T-6G | Shipped stage gate — v0.6.12 |
+| 2026-03-06 17:00 | Stage 6 / T-6G | /task T-6G | Stage gate: quality gate + spec-check validation |
+| 2026-03-06 16:30 | Stage 6 / FIX tasks | /verify-fixes | Verified 3 fix tasks (14 findings): PASS |
+| 2026-03-06 16:00 | Stage 6 / FIX tasks | /ship T-608-FIX1 | Shipped batched remediation (FIX1+FIX2+FIX3) — v0.6.9 |
+| 2026-03-06 15:00 | Stage 6 / FIX tasks | /task | Batched remediation: T-608-FIX1 + T-608-FIX2 + T-608-FIX3 |
+| 2026-03-06 14:00 | Stage 6 / T-608 | /ship T-608 | Shipped backtest results viewer and comparison UI — v0.6.8 |
+| 2026-03-06 13:00 | Stage 6 / T-608 | /task T-608 | Implement backtest results viewer and comparison UI (client scope) |
+| 2026-03-06 12:00 | Stage 6 / — | /stage-report | Compiled stage report: NOT READY — 4C/5H/5M findings, 3 remediation tasks |
+| 2026-03-06 11:30 | Stage 6 / — | /red-review | Red team review completed: FAIL — 4 critical findings (interval mismatch, missing risk-free rate, missing exit costs, thread safety) |
+| 2026-03-06 11:00 | Stage 6 / — | /review | Code review completed: Ready for merge (1 recommended fix: W-1 interval mismatch) |
+| 2026-03-06 10:30 | Stage 6 / T-607 | /ship T-607 | Shipped Backtest Runner UI — v0.6.7 |
+| 2026-03-06 10:00 | Stage 6 / T-607 | /task T-607 | Implement Backtest Runner UI (React page with form, equity chart, metrics, trade list) |
+| 2026-03-06 09:30 | Stage 6 / T-606 | /ship T-606 | Shipped backtest API endpoints — v0.6.6 |
+| 2026-03-06 09:00 | Stage 6 / T-606 | /task T-606 | Implement backtest API endpoints (POST run, GET results) |
+| 2026-03-06 08:00 | Stage 6 / T-605 | /ship T-605 | Shipped regime-aware reporting — v0.6.5 |
+| 2026-03-06 07:30 | Stage 6 / T-605 | /task T-605 | Implement regime-aware reporting in report.py |
+| 2026-03-06 07:00 | Stage 6 / T-604 | /ship T-604 | Shipped purged K-fold cross-validation — v0.6.4 |
+| 2026-03-06 06:30 | Stage 6 / T-604 | /task T-604 | Implement purged K-fold cross-validation |
+| 2026-03-06 06:00 | Stage 6 / T-603 | /ship T-603 | Shipped performance metrics — v0.6.3 |
+| 2026-03-06 05:30 | Stage 6 / T-603 | /task T-603 | Implement performance metrics in metrics.py |
+| 2026-03-06 05:00 | Stage 6 / T-602 | /ship T-602 | Shipped backtest engine — v0.6.2 |
+| 2026-03-06 04:30 | Stage 6 / T-602 | /task T-602 | Implement backtest engine in engine.py |
+| 2026-03-06 04:00 | Stage 6 / T-601 | /ship T-601 | Shipped trade simulation engine — v0.6.1 |
+| 2026-03-06 03:30 | Stage 6 / T-601 | /task T-601 | Implement trade simulation engine in simulator.py |
+| 2026-03-06 03:00 | Stage 6 / — | /stage-init | Initialized Stage 6: Backtesting with 8 tasks + 1 gate |
 | 2026-03-06 02:30 | Stage 5 / T-5G | /ship T-5G | Shipped stage gate — v0.5.12, merged to main, tagged |
 | 2026-03-06 02:00 | Stage 5 / T-5G | /task T-5G | Stage gate: quality gate validation for Stage 5 |
 | 2026-03-06 01:30 | Stage 5 / FIX tasks | /verify-fixes | Verified 3 fix tasks: PASS — all Critical/High findings resolved |

@@ -14,7 +14,7 @@ Newton is a multi-stage trading system built with:
 - **Backtesting** (Stage 6): Historical simulation, performance metrics
 - **Paper/Live Trading** (Stage 7-8): Deployment stages
 
-Current status: **Stage 5 complete (v0.5.12)** — Trading Engine. Stage 6 queued (Backtesting). → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
+Current status: **Stage 6 complete (v0.6.12)** — Backtesting. Stage 7 queued (Client Web UI). → See [TASKS](./TASKS.md) and [CHANGELOG](./CHANGELOG.md)
 
 ## Architecture
 
@@ -30,16 +30,16 @@ Current status: **Stage 5 complete (v0.5.12)** — Trading Engine. Stage 6 queue
 │  (FastAPI: /api/v1/health, /ohlcv, /features, /signal)      │
 └─────────────────────────────────────────────────────────────┘
                               │
-          ┌──────────────┬──────────────┬──────────────┐
-          ▼              ▼              ▼              ▼
-   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
-   │  Data      │ │  Event     │ │ ML Pipeline│ │  Trading   │
-   │  Pipeline  │ │  Detection │ │            │ │  Engine    │
-   │            │ │            │ │ - Features │ │            │
-   │ - Fetchers │ │ - Events   │ │ - XGBoost  │ │ - Risk     │
-   │ - Indicators│ │ - Tokens  │ │ - Regime   │ │ - Executor │
-   │ - Verifier │ │ - Bayesian│ │ - Ensemble │ │ - Brokers  │
-   └────────────┘ └────────────┘ └────────────┘ └────────────┘
+          ┌──────────┬──────────┬──────────┬──────────┬──────────┐
+          ▼          ▼          ▼          ▼          ▼
+   ┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐
+   │  Data    ││  Event   ││ ML       ││ Trading  ││ Backtest │
+   │ Pipeline ││ Detection││ Pipeline ││ Engine   ││          │
+   │          ││          ││          ││          ││- Simulator│
+   │- Fetchers││- Events  ││- Features││- Risk    ││- Engine  │
+   │- Indicate││- Tokens  ││- XGBoost ││- Executor││- Metrics │
+   │- Verifier││- Bayesian││- Ensemble││- Brokers ││- Reports │
+   └──────────┘└──────────┘└──────────┘└──────────┘└──────────┘
           │
           ▼
    ┌────────────────────────────────────────────────┐
@@ -121,6 +121,7 @@ The client provides:
 - **Health Dashboard** — system status, broker connectivity, candle freshness with auto-refresh
 - **UAT Runner** — run 28 behavioral tests across 7 suites with pass/fail results
 - **Admin Panels** — Feature Explorer, Signal Inspector, Regime Monitor, Model Dashboard
+- **Backtest Runner** — run backtests per instrument with equity curve, metrics, gate evaluation, regime breakdown, trade list, comparison view
 
 ## Configuration
 
@@ -199,6 +200,7 @@ Newton uses `0.{STAGE}.{TASK}` versioning:
 - `0.3.10` = Stage 3 complete
 - `0.4.8` = Stage 4 complete
 - `0.5.12` = Stage 5 complete
+- `0.6.12` = Stage 6 complete
 - Fix releases: `0.4.6` = Stage 4, fix tasks shipped
 
 See [CHANGELOG](./CHANGELOG.md) for release history.

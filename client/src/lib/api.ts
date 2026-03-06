@@ -207,6 +207,141 @@ export interface ComputeFeaturesResponse {
   metadata_stored: number;
 }
 
+/* ---------- OHLCV types ---------- */
+
+export interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface OHLCVResponse {
+  instrument: string;
+  interval: string;
+  start: string;
+  limit: number;
+  count: number;
+  data: OHLCVCandle[];
+}
+
+/* ---------- Backtest types ---------- */
+
+export interface BacktestRunRequest {
+  instrument: string;
+  start_date: string;
+  end_date: string;
+  pessimistic: boolean;
+  initial_equity: number;
+}
+
+export interface EquityCurvePoint {
+  time: string;
+  equity: number;
+}
+
+export interface BacktestTradeResponse {
+  entry_time: string;
+  entry_price: number;
+  exit_time: string | null;
+  exit_price: number | null;
+  direction: string;
+  quantity: number;
+  pnl: number;
+  commission: number;
+  slippage_cost: number;
+  spread_cost: number;
+  exit_reason: string;
+  regime_label: string;
+}
+
+export interface CalibrationDecile {
+  bin_index: number;
+  predicted_mid: number;
+  observed_freq: number;
+  count: number;
+}
+
+export interface BacktestMetricsResponse {
+  sharpe_ratio: number;
+  profit_factor: number;
+  max_drawdown: number;
+  win_rate: number;
+  calmar_ratio: number;
+  expectancy: number;
+  calibration_error: number;
+  trade_count: number;
+  annualized_return: number;
+  total_return: number;
+  calibration_deciles: CalibrationDecile[];
+}
+
+export interface BacktestGateResultResponse {
+  metric_name: string;
+  value: number;
+  threshold: number;
+  gate_type: string;
+  passed: boolean;
+}
+
+export interface BacktestGateResponse {
+  results: BacktestGateResultResponse[];
+  all_hard_gates_passed: boolean;
+  instrument: string;
+}
+
+export interface BacktestRegimeResponse {
+  regime_label: string;
+  sharpe_ratio: number;
+  profit_factor: number;
+  win_rate: number;
+  trade_count: number;
+  total_pnl: number;
+  low_sample_flag: boolean;
+}
+
+export interface BacktestBiasControlResponse {
+  bias_name: string;
+  mitigation: string;
+  status: string;
+}
+
+export interface BacktestResultResponse {
+  instrument: string;
+  equity_curve: EquityCurvePoint[];
+  trades: BacktestTradeResponse[];
+  metrics: BacktestMetricsResponse;
+  gate_evaluation: BacktestGateResponse;
+  regime_breakdown: Record<string, BacktestRegimeResponse>;
+  bias_controls: BacktestBiasControlResponse[];
+  low_sample_regimes: string[];
+  initial_equity: number;
+  final_equity: number;
+  total_return: number;
+  trade_count: number;
+}
+
+export interface BacktestRunStatusResponse {
+  id: string;
+  status: string;
+  instrument: string;
+  start_date: string;
+  end_date: string;
+  pessimistic: boolean;
+  initial_equity: number;
+  created_at: string;
+  completed_at: string | null;
+  result: BacktestResultResponse | null;
+  error: string | null;
+}
+
+export interface BacktestListResponse {
+  runs: BacktestRunStatusResponse[];
+  count: number;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
@@ -227,7 +362,7 @@ export const api = {
     qs.set("interval", params.interval);
     qs.set("start", params.start);
     if (params.limit) qs.set("limit", String(params.limit));
-    return request<unknown>(`/ohlcv/${encodeURIComponent(instrument)}?${qs.toString()}`);
+    return request<OHLCVResponse>(`/ohlcv/${encodeURIComponent(instrument)}?${qs.toString()}`);
   },
 
   uatSuites: () => request<UATSuitesResponse>("/uat/suites"),
@@ -267,4 +402,15 @@ export const api = {
     const params = modelType ? `?model_type=${encodeURIComponent(modelType)}` : "";
     return request<ModelListResponse>(`/models/${encodeURIComponent(instrument)}${params}`);
   },
+
+  runBacktest: (req: BacktestRunRequest) =>
+    request<BacktestRunStatusResponse>("/backtest", {
+      method: "POST",
+      body: JSON.stringify(req),
+    }),
+
+  getBacktest: (id: string) =>
+    request<BacktestRunStatusResponse>(`/backtest/${encodeURIComponent(id)}`),
+
+  listBacktests: () => request<BacktestListResponse>("/backtest"),
 };

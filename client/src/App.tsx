@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { HealthPage } from "@/pages/HealthPage";
 import { UATPage } from "@/pages/UATPage";
 import { AdminPage } from "@/pages/AdminPage";
+import { BacktestPage } from "@/pages/BacktestPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
               <Route index element={<HealthPage />} />
               <Route path="uat" element={<UATPage />} />
               <Route path="admin" element={<AdminPage />} />
+              <Route path="backtest" element={<BacktestPage />} />
             </Route>
           </Routes>
         </ErrorBoundary>
