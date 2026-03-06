@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Newton is a fully automated multi-instrument trading system that generates sustainable income using a hybrid machine-learning approach (Bayesian + XGBoost) to identify and execute trades across forex (EUR/USD via Oanda) and cryptocurrency (BTC/USD via Binance spot) markets. The canonical specification is `SPEC.md`. Decision precedence: `DECISIONS.md` > `SPEC.md`.
 
-**Current status:** Stage 1 in progress (v0.1.0).
+**Current status:** Stage 6 complete (v0.6.12). Stage 7 queued.
 
 ## Commands
 
