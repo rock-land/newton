@@ -137,7 +137,7 @@ class BacktestRunRequest(BaseModel):
     start_date: datetime
     end_date: datetime
     pessimistic: bool = False
-    initial_equity: float = Field(default=10_000.0, gt=0)
+    initial_equity: float = Field(default=10_000.0, gt=0, le=10_000_000.0)
 
 
 class EquityCurvePoint(BaseModel):

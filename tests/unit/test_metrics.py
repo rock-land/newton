@@ -512,3 +512,95 @@ class TestEdgeCases:
         assert m.win_rate == 1.0
         assert m.trade_count == 1
         assert m.profit_factor == pytest.approx(999.9)
+
+
+# ---------------------------------------------------------------------------
+# T-608-FIX2: Financial formula corrections
+# ---------------------------------------------------------------------------
+
+
+class TestSharpeRiskFreeRate:
+    """SR-C2: Sharpe formula subtracts daily risk-free rate."""
+
+    def test_risk_free_rate_reduces_sharpe(self) -> None:
+        """Nonzero risk-free rate → lower Sharpe than zero."""
+        trades = [_trade(100.0) for _ in range(10)]
+        result = _result_with_trades(trades)
+        m_zero = compute_metrics(
+            result, annualization_factor=math.sqrt(252), risk_free_rate=0.0,
+        )
+        m_rfr = compute_metrics(
+            result, annualization_factor=math.sqrt(252), risk_free_rate=0.05,
+        )
+        assert m_rfr.sharpe_ratio < m_zero.sharpe_ratio
+
+    def test_risk_free_rate_default_zero(self) -> None:
+        """Default risk_free_rate=0.0 produces same result as explicit 0."""
+        trades = [_trade(100.0) for _ in range(10)]
+        result = _result_with_trades(trades)
+        m_default = compute_metrics(result, annualization_factor=math.sqrt(252))
+        m_explicit = compute_metrics(
+            result, annualization_factor=math.sqrt(252), risk_free_rate=0.0,
+        )
+        assert m_default.sharpe_ratio == pytest.approx(m_explicit.sharpe_ratio)
+
+
+class TestCompoundCagr:
+    """SR-H1: Annualized return uses compound CAGR formula."""
+
+    def test_cagr_formula_applied(self) -> None:
+        """Compound CAGR: (1+total_return)^(ppy/n) - 1."""
+        # 10% total return over 252 periods → CAGR = (1.1)^(252/252) - 1 = 0.1
+        equity = [10000.0] + [10000.0 + i * (1000.0 / 252) for i in range(1, 253)]
+        result = _result_with_trades([], equity_values=equity)
+        m = compute_metrics(result, annualization_factor=math.sqrt(252))
+        expected_cagr = (1.0 + result.total_return) ** (252.0 / 252.0) - 1.0
+        assert m.annualized_return == pytest.approx(expected_cagr, abs=0.001)
+
+    def test_short_period_cagr(self) -> None:
+        """Short backtest with high return → CAGR properly annualizes."""
+        # 5% return over 10 periods at √252 annualization
+        equity = [10000.0, 10100.0, 10200.0, 10300.0, 10400.0, 10500.0]
+        result = _result_with_trades([], equity_values=equity)
+        m = compute_metrics(result, annualization_factor=math.sqrt(252))
+        # Compound formula produces higher annualized return for short periods
+        assert m.annualized_return > result.total_return
+
+
+class TestCalibrationErrorMismatch:
+    """SR-M4: Calibration error raises ValueError on length mismatch."""
+
+    def test_length_mismatch_raises(self) -> None:
+        """Mismatched predicted_probabilities and trades → ValueError."""
+        trades = [_trade(100.0), _trade(-50.0)]
+        result = _result_with_trades(trades)
+        with pytest.raises(ValueError, match="does not match trade count"):
+            compute_metrics(
+                result, annualization_factor=math.sqrt(252),
+                predicted_probabilities=[0.7],  # 1 prob for 2 trades
+            )
+
+
+class TestPortfolioSharpeConsistentFactor:
+    """SR-M5: Portfolio Sharpe uses consistent √365 convention."""
+
+    def test_portfolio_sharpe_uses_sqrt_365(self) -> None:
+        """Portfolio Sharpe should use √365, not average of factors."""
+        r1 = BacktestResult(
+            config=_config("EUR_USD"),
+            equity_curve=_equity_curve_from_values([10000, 10100, 10200, 10300, 10400]),
+            trades=[], initial_equity=10000.0, final_equity=10400.0,
+            total_return=0.04, trade_count=0,
+        )
+        r2 = BacktestResult(
+            config=_config("BTC_USD"),
+            equity_curve=_equity_curve_from_values([10000, 10050, 10100, 10150, 10200]),
+            trades=[], initial_equity=10000.0, final_equity=10200.0,
+            total_return=0.02, trade_count=0,
+        )
+        pm = compute_portfolio_metrics(
+            {"EUR_USD": r1, "BTC_USD": r2},
+            annualization_factors={"EUR_USD": math.sqrt(252), "BTC_USD": math.sqrt(365)},
+        )
+        # Portfolio Sharpe should be computed, not zero
+        assert pm.portfolio_sharpe > 0

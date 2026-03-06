@@ -86,6 +86,7 @@ def compute_metrics(
     *,
     annualization_factor: float,
     predicted_probabilities: Sequence[float] | None = None,
+    risk_free_rate: float = 0.0,
 ) -> PerformanceMetrics:
     """Compute all §9.5 metrics from a BacktestResult.
 
@@ -94,6 +95,8 @@ def compute_metrics(
         annualization_factor: √252 for forex, √365 for crypto.
         predicted_probabilities: Optional per-trade predicted probabilities
             for calibration error. Must match len(result.trades) if provided.
+        risk_free_rate: Annualized risk-free rate (e.g. 0.05 for 5%).
+            Subtracted from returns when computing Sharpe ratio per SPEC §9.5.
 
     Returns:
         Frozen PerformanceMetrics dataclass.
@@ -119,17 +122,18 @@ def compute_metrics(
     equity_values = [v for _, v in equity_curve]
     returns = _compute_returns(equity_values)
 
-    # --- Sharpe ---
-    sharpe = _compute_sharpe(returns, annualization_factor)
+    # --- Sharpe (with risk-free rate per §9.5) ---
+    sharpe = _compute_sharpe(returns, annualization_factor, risk_free_rate)
 
     # --- Max Drawdown ---
     max_dd = _compute_max_drawdown(equity_values)
 
-    # --- Annualized Return ---
+    # --- Annualized Return (compound CAGR) ---
     total_return = result.total_return
     n_periods = len(equity_values) - 1
-    if n_periods > 0:
-        annualized_return = total_return * (annualization_factor ** 2) / n_periods
+    periods_per_year = annualization_factor ** 2  # e.g. 252 or 365
+    if n_periods > 0 and total_return > -1.0:
+        annualized_return = (1.0 + total_return) ** (periods_per_year / n_periods) - 1.0
     else:
         annualized_return = 0.0
 
@@ -300,12 +304,9 @@ def compute_portfolio_metrics(
 
     # Portfolio Sharpe from combined returns
     portfolio_returns = _compute_returns(portfolio_equity) if len(portfolio_equity) > 1 else []
-    # Use average annualization factor for portfolio
-    avg_factor = (
-        sum(annualization_factors.values()) / len(annualization_factors)
-        if annualization_factors else math.sqrt(252)
-    )
-    portfolio_sharpe = _compute_sharpe(portfolio_returns, avg_factor)
+    # Use calendar days (√365) as single consistent convention for portfolio metrics
+    portfolio_factor = math.sqrt(365)
+    portfolio_sharpe = _compute_sharpe(portfolio_returns, portfolio_factor)
 
     # Portfolio max drawdown
     max_portfolio_dd = _compute_max_drawdown(portfolio_equity) if portfolio_equity else 0.0
@@ -340,12 +341,23 @@ def _compute_returns(equity_values: list[float]) -> list[float]:
     return returns
 
 
-def _compute_sharpe(returns: list[float], annualization_factor: float) -> float:
-    """Sharpe ratio = (mean_return / std_return) × annualization_factor."""
+def _compute_sharpe(
+    returns: list[float],
+    annualization_factor: float,
+    risk_free_rate: float = 0.0,
+) -> float:
+    """Sharpe ratio per SPEC §9.5.
+
+    Formula: (mean_return - daily_risk_free) / std_return × annualization_factor
+    where daily_risk_free = risk_free_rate / periods_per_year.
+    """
     if len(returns) < 2:
         return 0.0
-    mean_ret = sum(returns) / len(returns)
-    variance = sum((r - mean_ret) ** 2 for r in returns) / (len(returns) - 1)
+    periods_per_year = annualization_factor ** 2  # e.g. 252 or 365
+    daily_rf = risk_free_rate / periods_per_year if periods_per_year > 0 else 0.0
+    excess_returns = [r - daily_rf for r in returns]
+    mean_ret = sum(excess_returns) / len(excess_returns)
+    variance = sum((r - mean_ret) ** 2 for r in excess_returns) / (len(excess_returns) - 1)
     std_ret = math.sqrt(variance)
     if std_ret == 0:
         return 0.0
@@ -394,7 +406,10 @@ def _compute_calibration_error(
 
     trade_list = [t for t in trades if isinstance(t, BacktestTrade)]
     if len(trade_list) != len(predicted_probabilities):
-        return 0.0, ()
+        raise ValueError(
+            f"predicted_probabilities length ({len(predicted_probabilities)}) "
+            f"does not match trade count ({len(trade_list)})"
+        )
 
     # Bin by decile (0.0-0.1, 0.1-0.2, ..., 0.9-1.0)
     bins: dict[int, list[tuple[float, bool]]] = {i: [] for i in range(10)}

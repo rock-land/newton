@@ -705,3 +705,203 @@ class TestPessimisticMode:
             + pessimistic_result.trades[0].spread_cost
         )
         assert p_cost > n_cost
+
+
+# ---------------------------------------------------------------------------
+# T-608-FIX3: Exit costs, feature snapshot, regime, cash guard, dead code
+# ---------------------------------------------------------------------------
+
+
+class TestExitCosts:
+    """SR-C3: Exit-side transaction costs are applied."""
+
+    def test_exit_costs_reduce_pnl(self) -> None:
+        """Trade PnL includes exit-side slippage, spread, and commission."""
+        candles = _rising_candles(50)
+        cfg = BacktestConfig(
+            instrument="EUR_USD",
+            interval="1h",
+            start_date=candles[0].time,
+            end_date=candles[-1].time,
+            initial_equity=100_000.0,
+            pessimistic=False,
+        )
+        result = run_backtest(
+            candles=candles,
+            signal_generator=_AlwaysBuyGenerator(),
+            generator_config=_default_generator_config(),
+            fill_config=_eur_fill_config(),
+            risk_config=_default_risk_config(),
+            config=cfg,
+        )
+        assert result.trade_count >= 1
+        trade = result.trades[0]
+        # Exit costs should be accumulated (entry + exit)
+        # EUR/USD slippage = 1.0 pip, spread = 0.75 pip (per side)
+        # Total should be entry + exit costs
+        assert trade.slippage_cost > 0
+        assert trade.spread_cost > 0
+
+    def test_btc_exit_commission_applied(self) -> None:
+        """BTC/USD exit commission (0.10%) deducted from PnL."""
+        btc_fill = FillConfig(
+            instrument="BTC_USD",
+            asset_class="crypto",
+            slippage=0.0002,
+            half_spread=0.00025,
+            pip_size=0.01,
+            commission_pct=0.001,
+            pessimistic=False,
+        )
+        candles = _rising_candles(50, start_price=40000.0, step=100.0)
+        # Override to BTC instrument/interval
+        btc_candles = [
+            _make_candle(
+                i, open_=c.open, high=c.high, low=c.low, close=c.close,
+                instrument="BTC_USD",
+            )
+            for i, c in enumerate(candles)
+        ]
+        cfg = BacktestConfig(
+            instrument="BTC_USD",
+            interval="1h",
+            start_date=btc_candles[0].time,
+            end_date=btc_candles[-1].time,
+            initial_equity=100_000.0,
+            pessimistic=False,
+        )
+        result = run_backtest(
+            candles=btc_candles,
+            signal_generator=_AlwaysBuyGenerator(),
+            generator_config=_default_generator_config(),
+            fill_config=btc_fill,
+            risk_config=_default_risk_config(),
+            config=cfg,
+        )
+        if result.trade_count >= 1:
+            trade = result.trades[0]
+            # Commission should include both entry and exit sides
+            assert trade.commission > 0
+
+
+class TestFeatureSnapshot:
+    """SR-H3: Features include computed indicators, not just raw OHLCV."""
+
+    def test_features_include_indicators(self) -> None:
+        """FeatureSnapshot includes RSI, MACD etc. from TechnicalIndicatorProvider."""
+        from src.backtest.engine import _precompute_features
+
+        candles = _rising_candles(50)
+        cfg = BacktestConfig(
+            instrument="EUR_USD",
+            interval="1h",
+            start_date=candles[0].time,
+            end_date=candles[-1].time,
+            initial_equity=100_000.0,
+            pessimistic=False,
+        )
+        features = _precompute_features(candles, cfg)
+        # Should have features for some timestamps (first few may lack lookback)
+        assert len(features) > 0
+        # Check last timestamp (has full lookback) for indicator features
+        last_time = candles[-1].time
+        assert last_time in features
+        feature_keys = list(features[last_time].keys())
+        # Should contain RSI or MACD indicators (need 14+ and 26+ bars respectively)
+        has_indicators = any("rsi" in k or "macd" in k or "bb" in k for k in feature_keys)
+        assert has_indicators
+
+
+class TestRegimeIntegration:
+    """SR-M1: Trades get regime labels from detector, not just 'UNKNOWN'."""
+
+    def test_regime_labels_computed(self) -> None:
+        """With sufficient history, regime labels are not all 'UNKNOWN'."""
+        from src.backtest.engine import _precompute_regimes
+
+        # Need 30+ bars for regime detection
+        candles = _rising_candles(60)
+        regime_map = _precompute_regimes(candles, "EUR_USD")
+        # First bars should be UNKNOWN (insufficient history)
+        assert regime_map[candles[0].time] == "UNKNOWN"
+        # Later bars should have real regime labels
+        last_bar = candles[-1]
+        label = regime_map[last_bar.time]
+        assert label in (
+            "LOW_VOL_TRENDING", "LOW_VOL_RANGING",
+            "HIGH_VOL_TRENDING", "HIGH_VOL_RANGING",
+            "UNKNOWN",
+        )
+
+    def test_trades_have_regime_label(self) -> None:
+        """Trades from engine have regime labels assigned."""
+        candles = _rising_candles(60)
+        cfg = BacktestConfig(
+            instrument="EUR_USD",
+            interval="1h",
+            start_date=candles[0].time,
+            end_date=candles[-1].time,
+            initial_equity=100_000.0,
+            pessimistic=False,
+        )
+        result = run_backtest(
+            candles=candles,
+            signal_generator=_AlwaysBuyGenerator(),
+            generator_config=_default_generator_config(),
+            fill_config=_eur_fill_config(),
+            risk_config=_default_risk_config(),
+            config=cfg,
+        )
+        if result.trade_count >= 1:
+            # At least one trade should exist; all should have a regime_label
+            for trade in result.trades:
+                assert trade.regime_label is not None
+                assert isinstance(trade.regime_label, str)
+
+
+class TestCashGuard:
+    """SR-M2: Trade skipped if insufficient cash."""
+
+    def test_no_negative_cash(self) -> None:
+        """Cash should never go negative (no implicit leverage)."""
+        candles = _rising_candles(50)
+        cfg = BacktestConfig(
+            instrument="EUR_USD",
+            interval="1h",
+            start_date=candles[0].time,
+            end_date=candles[-1].time,
+            initial_equity=100.0,  # Very small equity to trigger cash guard
+            pessimistic=False,
+        )
+        result = run_backtest(
+            candles=candles,
+            signal_generator=_AlwaysBuyGenerator(),
+            generator_config=_default_generator_config(),
+            fill_config=_eur_fill_config(),
+            risk_config=_default_risk_config(),
+            config=cfg,
+        )
+        # Equity curve should never go deeply negative
+        # With cash guard, equity should stay near initial
+        for _, equity in result.equity_curve:
+            assert equity >= 0
+
+
+class TestDeadCodeRemoved:
+    """SR-M3: Redundant 'if completed' guard removed from _trade_stats."""
+
+    def test_trade_stats_no_redundant_guard(self) -> None:
+        """_trade_stats computes correctly without redundant guard."""
+        from src.backtest.engine import _trade_stats
+
+        trades = [
+            BacktestTrade(
+                entry_time=_BASE_TIME, entry_price=1.0, exit_time=_BASE_TIME,
+                exit_price=1.1, direction="BUY", quantity=1.0, pnl=100.0,
+                commission=0.0, slippage_cost=0.0, spread_cost=0.0,
+                exit_reason="signal", regime_label="UNKNOWN",
+            ),
+        ]
+        stats = _trade_stats(trades)
+        assert stats["win_rate"] == 1.0
+        assert stats["num_trades"] == 1

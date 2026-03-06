@@ -10,10 +10,11 @@ import json
 import logging
 import math
 import os
+import threading
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
@@ -92,6 +93,10 @@ class _RunState:
 # ---------------------------------------------------------------------------
 
 
+_MAX_RUNS = 100
+"""Maximum stored backtest runs. Oldest completed runs evicted when exceeded."""
+
+
 @dataclass
 class BacktestService:
     """Manages backtest execution and result storage."""
@@ -101,6 +106,7 @@ class BacktestService:
     _executor: ThreadPoolExecutor = field(
         default_factory=lambda: ThreadPoolExecutor(max_workers=2),
     )
+    _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def submit_run(self, request: BacktestRunRequest) -> tuple[str, Future[None]]:
         """Submit a backtest run. Returns (run_id, future)."""
@@ -114,54 +120,74 @@ class BacktestService:
             pessimistic=request.pessimistic,
             initial_equity=request.initial_equity,
         )
-        self._runs[run_id] = state
+        with self._lock:
+            self._evict_oldest()
+            self._runs[run_id] = state
         future = self._executor.submit(self._execute, state, request)
         return run_id, future
 
     def get_run(self, run_id: str) -> _RunState | None:
-        return self._runs.get(run_id)
+        with self._lock:
+            return self._runs.get(run_id)
 
     def list_runs(self) -> list[_RunState]:
-        return sorted(self._runs.values(), key=lambda r: r.created_at, reverse=True)
+        with self._lock:
+            runs = list(self._runs.values())
+        return sorted(runs, key=lambda r: r.created_at, reverse=True)
+
+    def _evict_oldest(self) -> None:
+        """Remove oldest completed runs when at capacity. Called under lock."""
+        if len(self._runs) < _MAX_RUNS:
+            return
+        completed = sorted(
+            (r for r in self._runs.values() if r.status in ("completed", "failed")),
+            key=lambda r: r.created_at,
+        )
+        while len(self._runs) >= _MAX_RUNS and completed:
+            oldest = completed.pop(0)
+            del self._runs[oldest.id]
 
     def _execute(self, state: _RunState, request: BacktestRunRequest) -> None:
         try:
             config = BacktestConfig(
                 instrument=request.instrument,
-                interval="H1",
+                interval="1h",
                 start_date=request.start_date,
                 end_date=request.end_date,
                 initial_equity=request.initial_equity,
                 pessimistic=request.pessimistic,
             )
             result = self.runner.run(config)
-            state.result = _build_result_response(result)
-            state.status = "completed"
-            state.completed_at = datetime.now(UTC)
-        except Exception as exc:
+            with self._lock:
+                state.result = _build_result_response(result)
+                state.status = "completed"
+                state.completed_at = datetime.now(UTC)
+        except Exception:
             logger.exception("Backtest run %s failed", state.id)
-            state.status = "failed"
-            state.error = str(exc)
-            state.completed_at = datetime.now(UTC)
+            with self._lock:
+                state.status = "failed"
+                state.error = "Backtest execution failed"
+                state.completed_at = datetime.now(UTC)
 
     def build_status_response(
         self, run_id: str, *, include_result: bool = True,
     ) -> BacktestRunStatusResponse:
         """Build API response from internal run state."""
-        state = self._runs[run_id]
-        return BacktestRunStatusResponse(
-            id=state.id,
-            status=state.status,
-            instrument=state.instrument,
-            start_date=state.start_date,
-            end_date=state.end_date,
-            pessimistic=state.pessimistic,
-            initial_equity=state.initial_equity,
-            created_at=state.created_at,
-            completed_at=state.completed_at,
-            result=state.result if include_result else None,
-            error=state.error,
-        )
+        with self._lock:
+            state = self._runs[run_id]
+            return BacktestRunStatusResponse(
+                id=state.id,
+                status=state.status,
+                instrument=state.instrument,
+                start_date=state.start_date,
+                end_date=state.end_date,
+                pessimistic=state.pessimistic,
+                initial_equity=state.initial_equity,
+                created_at=state.created_at,
+                completed_at=state.completed_at,
+                result=state.result if include_result else None,
+                error=state.error,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +367,9 @@ def create_backtest_run(req: BacktestRunRequest) -> BacktestRunStatusResponse:
         )
     if req.start_date >= req.end_date:
         raise HTTPException(status_code=400, detail="start_date must be before end_date")
+    max_range = timedelta(days=5 * 365)
+    if req.end_date - req.start_date > max_range:
+        raise HTTPException(status_code=400, detail="Date range must not exceed 5 years")
 
     run_id, future = service.submit_run(req)
 

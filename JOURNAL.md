@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 16:00 | Stage 6 / FIX tasks | /ship T-608-FIX1 | Shipped batched remediation (FIX1+FIX2+FIX3) — v0.6.9 |
+| 2026-03-06 15:00 | Stage 6 / FIX tasks | /task | Batched remediation: T-608-FIX1 + T-608-FIX2 + T-608-FIX3 |
 | 2026-03-06 14:00 | Stage 6 / T-608 | /ship T-608 | Shipped backtest results viewer and comparison UI — v0.6.8 |
 | 2026-03-06 13:00 | Stage 6 / T-608 | /task T-608 | Implement backtest results viewer and comparison UI (client scope) |
 | 2026-03-06 12:00 | Stage 6 / — | /stage-report | Compiled stage report: NOT READY — 4C/5H/5M findings, 3 remediation tasks |

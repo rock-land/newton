@@ -47,7 +47,7 @@ def _make_result(instrument: str = "EUR_USD") -> BacktestResult:
     return BacktestResult(
         config=BacktestConfig(
             instrument=instrument,
-            interval="H1",
+            interval="1h",
             start_date=_NOW,
             end_date=_END,
             initial_equity=10_000.0,
@@ -326,3 +326,67 @@ class TestServicePattern:
         assert svc is not None
         assert isinstance(svc, bt_module.BacktestService)
         assert isinstance(svc.runner, bt_module.DefaultBacktestRunner)
+
+
+# ---------------------------------------------------------------------------
+# T-608-FIX1: Interval fix, thread safety, bounded storage, error, validation
+# ---------------------------------------------------------------------------
+
+
+class TestIntervalFix:
+    def test_interval_is_1h_not_h1(self) -> None:
+        """SR-C1: Config uses '1h' interval, not 'H1'."""
+        runner = FakeRunner()
+        _setup_service(runner)
+        _post_backtest()
+        assert runner.calls[0].interval == "1h"
+
+
+class TestErrorSanitization:
+    def test_failed_run_hides_internal_details(self) -> None:
+        """SR-H4: Error message is generic, not the raw exception."""
+        _setup_service(FailingRunner())
+        r = _post_backtest()
+        assert r["data"]["status"] == "failed"
+        assert r["data"]["error"] == "Backtest execution failed"
+        # Must NOT contain internal exception text
+        assert "simulation failed" not in (r["data"]["error"] or "").lower()
+
+
+class TestInputValidation:
+    def test_initial_equity_upper_bound(self) -> None:
+        """SR-H5: initial_equity > 10M is rejected by Pydantic."""
+        _setup_service()
+        r = _post_backtest(initial_equity=20_000_000.0)
+        assert r["status_code"] == 422  # Pydantic validation error
+
+    def test_date_range_exceeds_5_years(self) -> None:
+        """SR-H5: Date range > 5 years is rejected."""
+        _setup_service()
+        r = _post_backtest(
+            start="2015-01-01T00:00:00Z",
+            end="2024-06-01T00:00:00Z",
+        )
+        assert r["status_code"] == 400
+
+
+class TestBoundedStorage:
+    def test_eviction_at_capacity(self) -> None:
+        """SR-H2: Oldest completed runs evicted when at _MAX_RUNS."""
+        from src.api.v1.backtest import _MAX_RUNS
+
+        runner = FakeRunner()
+        service = _setup_service(runner)
+        # Submit _MAX_RUNS + 5 runs
+        for _ in range(_MAX_RUNS + 5):
+            _post_backtest()
+        runs = service.list_runs()
+        assert len(runs) <= _MAX_RUNS
+
+
+class TestThreadSafety:
+    def test_service_has_lock(self) -> None:
+        """SR-C4: BacktestService has a threading.Lock."""
+        import threading
+        service = _setup_service()
+        assert isinstance(service._lock, threading.Lock)

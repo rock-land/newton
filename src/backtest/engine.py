@@ -8,10 +8,13 @@ controls (hard/trailing/time stops), and produces an equity curve + trade list.
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
+
+import numpy as np
 
 from src.analysis.signal_contract import (
     FeatureSnapshot,
@@ -20,6 +23,15 @@ from src.analysis.signal_contract import (
 )
 from src.backtest.simulator import FillConfig, simulate_fill
 from src.data.fetcher_base import CandleRecord
+from src.data.indicators import TechnicalIndicatorProvider
+from src.regime.detector import (
+    ADX_PERIOD,
+    VOL_WINDOW,
+    classify_regime,
+    compute_adx_14,
+    compute_vol_30d,
+    compute_vol_median,
+)
 from src.trading.risk import (
     InTradeAction,
     ResolvedRiskConfig,
@@ -28,6 +40,9 @@ from src.trading.risk import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Minimum bars for regime detection (ADX needs 2×period)
+_MIN_REGIME_BARS = 2 * ADX_PERIOD
 
 # ---------------------------------------------------------------------------
 # Domain models — all frozen per DEC-010
@@ -120,13 +135,46 @@ class _OpenPosition:
             return (current_price - self.entry_price) * self.quantity
         return (self.entry_price - current_price) * self.quantity
 
-    def close(self, exit_price: float, exit_time: datetime, reason: str) -> BacktestTrade:
-        """Close the position and return a frozen BacktestTrade."""
+    def close(
+        self,
+        exit_price: float,
+        exit_time: datetime,
+        reason: str,
+        fill_config: FillConfig | None = None,
+    ) -> BacktestTrade:
+        """Close the position and return a frozen BacktestTrade.
+
+        If fill_config is provided, exit-side transaction costs (slippage,
+        spread, commission) are computed via simulate_fill and deducted from PnL.
+        """
+        exit_direction: Literal["BUY", "SELL"] = (
+            "SELL" if self.direction == "BUY" else "BUY"
+        )
+
+        exit_slippage = 0.0
+        exit_spread = 0.0
+        exit_commission = 0.0
+
+        if fill_config is not None:
+            exit_fill = simulate_fill(
+                direction=exit_direction,
+                next_bar_open=exit_price,
+                fill_time=exit_time,
+                config=fill_config,
+            )
+            exit_price = exit_fill.fill_price
+            exit_slippage = exit_fill.slippage_cost
+            exit_spread = exit_fill.spread_cost
+            exit_commission = exit_fill.commission_cost * self.quantity
+
         if self.direction == "BUY":
             raw_pnl = (exit_price - self.entry_price) * self.quantity
         else:
             raw_pnl = (self.entry_price - exit_price) * self.quantity
-        pnl = raw_pnl - self.commission
+
+        total_commission = self.commission + exit_commission
+        pnl = raw_pnl - total_commission
+
         return BacktestTrade(
             entry_time=self.entry_time,
             entry_price=self.entry_price,
@@ -135,9 +183,9 @@ class _OpenPosition:
             direction=self.direction,
             quantity=self.quantity,
             pnl=pnl,
-            commission=self.commission,
-            slippage_cost=self.slippage_cost,
-            spread_cost=self.spread_cost,
+            commission=total_commission,
+            slippage_cost=self.slippage_cost + exit_slippage,
+            spread_cost=self.spread_cost + exit_spread,
             exit_reason=reason,
             regime_label=self.regime_label,
         )
@@ -145,6 +193,83 @@ class _OpenPosition:
     def open_hours(self, current_time: datetime) -> float:
         """Hours since entry."""
         return (current_time - self.entry_time).total_seconds() / 3600.0
+
+
+# ---------------------------------------------------------------------------
+# Pre-computation helpers
+# ---------------------------------------------------------------------------
+
+
+def _precompute_features(
+    filtered: list[CandleRecord],
+    config: BacktestConfig,
+) -> dict[datetime, dict[str, float]]:
+    """Pre-compute indicator features for all bars using TechnicalIndicatorProvider."""
+    provider = TechnicalIndicatorProvider()
+    feature_map = provider.get_features(
+        instrument=config.instrument,
+        interval=config.interval,
+        candles=list(filtered),
+        lookback=max(26, len(filtered)),  # Ensure full lookback
+    )
+    return feature_map
+
+
+def _annualization_factor(instrument: str) -> float:
+    """Return annualization factor based on instrument type."""
+    if "BTC" in instrument or "ETH" in instrument:
+        return math.sqrt(365)
+    return math.sqrt(252)
+
+
+def _precompute_regimes(
+    filtered: list[CandleRecord],
+    instrument: str,
+) -> dict[datetime, str]:
+    """Pre-compute regime labels for each bar where sufficient history exists."""
+    regime_map: dict[datetime, str] = {}
+    ann_factor = _annualization_factor(instrument)
+
+    closes_list = [c.close for c in filtered]
+    highs_list = [c.high for c in filtered]
+    lows_list = [c.low for c in filtered]
+
+    # Pre-compute vol_30d for all bars with sufficient data to get vol_median
+    vol_history: list[float] = []
+    for i in range(len(filtered)):
+        if i < VOL_WINDOW:
+            regime_map[filtered[i].time] = "UNKNOWN"
+            continue
+
+        window_closes = np.array(closes_list[: i + 1], dtype=np.float64)
+        try:
+            vol_30d = compute_vol_30d(closes=window_closes, annualization_factor=ann_factor)
+        except ValueError:
+            regime_map[filtered[i].time] = "UNKNOWN"
+            continue
+
+        vol_history.append(vol_30d)
+
+        if i < _MIN_REGIME_BARS:
+            regime_map[filtered[i].time] = "UNKNOWN"
+            continue
+
+        window_highs = np.array(highs_list[: i + 1], dtype=np.float64)
+        window_lows = np.array(lows_list[: i + 1], dtype=np.float64)
+
+        try:
+            adx_14 = compute_adx_14(
+                highs=window_highs, lows=window_lows, closes=window_closes,
+            )
+        except ValueError:
+            regime_map[filtered[i].time] = "UNKNOWN"
+            continue
+
+        vol_med = compute_vol_median(vol_history)
+        label = classify_regime(vol_30d=vol_30d, adx_14=adx_14, vol_median=vol_med)
+        regime_map[filtered[i].time] = label.value
+
+    return regime_map
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +320,10 @@ def run_backtest(
             trade_count=0,
         )
 
+    # Pre-compute indicator features and regime labels
+    feature_map = _precompute_features(filtered, config)
+    regime_map = _precompute_regimes(filtered, config.instrument)
+
     equity = config.initial_equity
     cash = config.initial_equity
     position: _OpenPosition | None = None
@@ -210,7 +339,7 @@ def run_backtest(
         # --- 1. Manage open position ---
         if position is not None:
             # Check hard stop against bar's price action
-            closed_trade = _check_stop_hit(position, bar)
+            closed_trade = _check_stop_hit(position, bar, fill_config)
             if closed_trade is not None:
                 cash += position.entry_price * position.quantity + closed_trade.pnl
                 trades.append(closed_trade)
@@ -220,7 +349,9 @@ def run_backtest(
                 # Evaluate in-trade controls (time stop, trailing stop)
                 action = _evaluate_controls(position, bar, risk_config)
                 if action.action == "CLOSE":
-                    closed_trade = position.close(bar.close, bar.time, _reason_label(action))
+                    closed_trade = position.close(
+                        bar.close, bar.time, _reason_label(action), fill_config,
+                    )
                     cash += position.entry_price * position.quantity + closed_trade.pnl
                     trades.append(closed_trade)
                     completed_trades.append(closed_trade)
@@ -230,7 +361,7 @@ def run_backtest(
 
         # --- 2. Force close at end of data ---
         if is_last_bar and position is not None:
-            closed_trade = position.close(bar.close, bar.time, "end_of_data")
+            closed_trade = position.close(bar.close, bar.time, "end_of_data", fill_config)
             cash += position.entry_price * position.quantity + closed_trade.pnl
             trades.append(closed_trade)
             completed_trades.append(closed_trade)
@@ -238,7 +369,7 @@ def run_backtest(
 
         # --- 3. Generate signal and open new position ---
         if not is_last_bar and position is None:
-            features = _build_features(bar, config)
+            features = _build_features(bar, config, feature_map)
             signal = signal_generator.generate(
                 config.instrument, features, generator_config,
             )
@@ -257,7 +388,7 @@ def run_backtest(
                     avg_loss=stats["avg_loss"],
                     equity=cash,
                     config=risk_config,
-                    regime_confidence=None,  # Regime not integrated in v1 engine
+                    regime_confidence=None,
                     num_trades=int(stats["num_trades"]),
                 )
 
@@ -285,19 +416,27 @@ def run_backtest(
                             stop_price = fill.fill_price * (1.0 + risk_config.hard_stop_pct)
 
                         cost_of_entry = fill.fill_price * quantity
-                        cash -= cost_of_entry
 
-                        position = _OpenPosition(
-                            direction=direction,
-                            entry_time=fill.fill_time,
-                            entry_price=fill.fill_price,
-                            quantity=quantity,
-                            stop_price=stop_price,
-                            commission=fill.commission_cost * quantity,
-                            slippage_cost=fill.slippage_cost,
-                            spread_cost=fill.spread_cost,
-                            regime_label="UNKNOWN",
-                        )
+                        # Cash guard: skip trade if insufficient cash (SR-M2)
+                        if cash < cost_of_entry:
+                            pass  # Skip — insufficient cash for this trade
+                        else:
+                            cash -= cost_of_entry
+
+                            # Regime label for this bar
+                            regime_label = regime_map.get(bar.time, "UNKNOWN")
+
+                            position = _OpenPosition(
+                                direction=direction,
+                                entry_time=fill.fill_time,
+                                entry_price=fill.fill_price,
+                                quantity=quantity,
+                                stop_price=stop_price,
+                                commission=fill.commission_cost * quantity,
+                                slippage_cost=fill.slippage_cost,
+                                spread_cost=fill.spread_cost,
+                                regime_label=regime_label,
+                            )
 
         # --- 4. Record equity ---
         if position is not None:
@@ -326,19 +465,29 @@ def run_backtest(
 # ---------------------------------------------------------------------------
 
 
-def _build_features(bar: CandleRecord, config: BacktestConfig) -> FeatureSnapshot:
-    """Build a minimal FeatureSnapshot from a candle bar."""
+def _build_features(
+    bar: CandleRecord,
+    config: BacktestConfig,
+    feature_map: dict[datetime, dict[str, float]],
+) -> FeatureSnapshot:
+    """Build a FeatureSnapshot from pre-computed indicator features."""
+    values: dict[str, float] = {
+        "_open": bar.open,
+        "_high": bar.high,
+        "_low": bar.low,
+        "_close": bar.close,
+        "_volume": bar.volume,
+    }
+    # Merge pre-computed indicator features if available for this timestamp
+    precomputed = feature_map.get(bar.time)
+    if precomputed:
+        values.update(precomputed)
+
     return FeatureSnapshot(
         instrument=config.instrument,
         interval=config.interval,
         time=bar.time,
-        values={
-            "_open": bar.open,
-            "_high": bar.high,
-            "_low": bar.low,
-            "_close": bar.close,
-            "_volume": bar.volume,
-        },
+        values=values,
         metadata={},
     )
 
@@ -346,14 +495,15 @@ def _build_features(bar: CandleRecord, config: BacktestConfig) -> FeatureSnapsho
 def _check_stop_hit(
     position: _OpenPosition,
     bar: CandleRecord,
+    fill_config: FillConfig,
 ) -> BacktestTrade | None:
     """Check if the bar's price action hits the hard stop."""
     if position.direction == "BUY":
         if bar.low <= position.stop_price:
-            return position.close(position.stop_price, bar.time, "hard_stop")
+            return position.close(position.stop_price, bar.time, "hard_stop", fill_config)
     else:
         if bar.high >= position.stop_price:
-            return position.close(position.stop_price, bar.time, "hard_stop")
+            return position.close(position.stop_price, bar.time, "hard_stop", fill_config)
     return None
 
 
@@ -395,7 +545,7 @@ def _trade_stats(completed: list[BacktestTrade]) -> dict[str, float]:
     wins = [t.pnl for t in completed if t.pnl > 0]
     losses = [abs(t.pnl) for t in completed if t.pnl <= 0]
 
-    win_rate = len(wins) / len(completed) if completed else 0.0
+    win_rate = len(wins) / len(completed)
     avg_win = sum(wins) / len(wins) if wins else 0.0
     avg_loss = sum(losses) / len(losses) if losses else 0.0
 
