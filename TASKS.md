@@ -177,7 +177,7 @@ The following work was completed before governance was established. This is not 
 | T-608-FIX1 | Backtest API fixes: interval mismatch, thread safety, bounded storage, error sanitization, input validation | server | RC-1 `"H1"`→`"1h"` fixed; RC-4 `_RunState` guarded by `threading.Lock`; RH-2 max 100 runs with LRU eviction; RH-4 generic error messages (internal details logged only); RH-5 `initial_equity` upper bound + date range max 5yr; tests for all fixes | DONE |
 | T-608-FIX2 | Financial formula corrections: Sharpe risk-free rate, CAGR, calibration error, portfolio Sharpe | server | RC-2 Sharpe subtracts daily risk-free rate from returns; RH-1 compound CAGR formula replaces linear; RM-4 `ValueError` raised on length mismatch; RM-5 consistent annualization convention for portfolio metrics; existing metric tests updated with corrected expected values | DONE |
 | T-608-FIX3 | Engine simulation accuracy: exit costs, feature snapshot, regime integration, cash guard, dead code | server | RC-3 exit fills simulated with slippage/spread/commission; SR-H3 `_build_features` computes indicator features via `FeatureProvider`; SR-M1 regime detector integrated for per-trade labels; RM-2 `cash >= cost` guard before entry; RM-3 dead branch removed; tests cover exit cost PnL reduction, negative cash skip, and regime label assignment | DONE |
-| T-6G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; `cd client && npm run build` PASS; all T-6xx tasks DONE | TODO |
+| T-6G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS ≥80% global; `cd client && npm run build` PASS; all T-6xx tasks DONE | DONE |
 
 ---
 

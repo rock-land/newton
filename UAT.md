@@ -1,6 +1,6 @@
 # Newton User Acceptance Tests
 
-A practical test plan for human verification. Each item is something you can see, click, or run — not a unit-test assertion. All granular logic tests are covered by `pytest` (429+ tests) and the automated UAT suite (28 behavioral tests).
+A practical test plan for human verification. Each item is something you can see, click, or run — not a unit-test assertion. All granular logic tests are covered by `pytest` (855+ tests) and the automated UAT suite (28 behavioral tests).
 
 **Prerequisites:**
 1. Start TimescaleDB: `docker compose up -d`

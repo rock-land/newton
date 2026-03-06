@@ -5,6 +5,9 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-06 17:30 | Stage 6 / T-6G | /ship T-6G | Shipped stage gate — v0.6.12 |
+| 2026-03-06 17:00 | Stage 6 / T-6G | /task T-6G | Stage gate: quality gate + spec-check validation |
+| 2026-03-06 16:30 | Stage 6 / FIX tasks | /verify-fixes | Verified 3 fix tasks (14 findings): PASS |
 | 2026-03-06 16:00 | Stage 6 / FIX tasks | /ship T-608-FIX1 | Shipped batched remediation (FIX1+FIX2+FIX3) — v0.6.9 |
 | 2026-03-06 15:00 | Stage 6 / FIX tasks | /task | Batched remediation: T-608-FIX1 + T-608-FIX2 + T-608-FIX3 |
 | 2026-03-06 14:00 | Stage 6 / T-608 | /ship T-608 | Shipped backtest results viewer and comparison UI — v0.6.8 |
