@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   Activity,
   FlaskConical,
+  Gauge,
   LayoutDashboard,
   LineChart,
 } from "lucide-react";
@@ -18,7 +19,8 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { to: "/", label: "Health", icon: Activity },
+  { to: "/", label: "Dashboard", icon: Gauge },
+  { to: "/health", label: "Health", icon: Activity },
   { to: "/uat", label: "UAT Runner", icon: FlaskConical },
   { to: "/admin", label: "Admin", icon: LayoutDashboard },
   { to: "/backtest", label: "Backtest", icon: LineChart },

@@ -227,6 +227,45 @@ export interface OHLCVResponse {
   data: OHLCVCandle[];
 }
 
+/* ---------- Trading types ---------- */
+
+export interface TradeResponse {
+  client_order_id: string;
+  broker_order_id: string | null;
+  instrument: string;
+  broker: string;
+  direction: string;
+  signal_score: number;
+  signal_type: string;
+  signal_generator_id: string;
+  regime_label: string | null;
+  entry_time: string | null;
+  entry_price: number | null;
+  exit_time: string | null;
+  exit_price: number | null;
+  quantity: number;
+  stop_loss_price: number | null;
+  status: string;
+  pnl: number | null;
+  commission: number | null;
+  slippage: number | null;
+  exit_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradesListResponse {
+  trades: TradeResponse[];
+  count: number;
+}
+
+export interface KillSwitchResponse {
+  active: boolean;
+  action: string;
+  positions_closed: number;
+  message: string;
+}
+
 /* ---------- Backtest types ---------- */
 
 export interface BacktestRunRequest {
@@ -413,4 +452,22 @@ export const api = {
     request<BacktestRunStatusResponse>(`/backtest/${encodeURIComponent(id)}`),
 
   listBacktests: () => request<BacktestListResponse>("/backtest"),
+
+  trades: (opts?: { instrument?: string; status?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (opts?.instrument) qs.set("instrument", opts.instrument);
+    if (opts?.status) qs.set("status", opts.status);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const q = qs.toString();
+    return request<TradesListResponse>(`/trades${q ? `?${q}` : ""}`);
+  },
+
+  activateKillSwitch: (reason = "manual_activation") =>
+    request<KillSwitchResponse>("/kill", {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+
+  deactivateKillSwitch: () =>
+    request<KillSwitchResponse>("/kill?confirm=true", { method: "DELETE" }),
 };

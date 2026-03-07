@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-08 13:00 | Stage 7 / T-701 | /ship T-701 | Shipped dashboard page — v0.7.1 |
+| 2026-03-08 12:30 | Stage 7 / T-701 | /task T-701 | Dashboard page: portfolio overview, instrument status, health, kill switch |
 | 2026-03-08 12:00 | Stage 7 / — | /stage-init | Initialized Stage 7: Client Web UI with 9 tasks + 1 gate |
 | 2026-03-06 17:30 | Stage 6 / T-6G | /ship T-6G | Shipped stage gate — v0.6.12 |
 | 2026-03-06 17:00 | Stage 6 / T-6G | /task T-6G | Stage gate: quality gate + spec-check validation |

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/layout/Layout";
+import { DashboardPage } from "@/pages/DashboardPage";
 import { HealthPage } from "@/pages/HealthPage";
 import { UATPage } from "@/pages/UATPage";
 import { AdminPage } from "@/pages/AdminPage";
@@ -14,7 +15,8 @@ export default function App() {
         <ErrorBoundary>
           <Routes>
             <Route element={<Layout />}>
-              <Route index element={<HealthPage />} />
+              <Route index element={<DashboardPage />} />
+              <Route path="health" element={<HealthPage />} />
               <Route path="uat" element={<UATPage />} />
               <Route path="admin" element={<AdminPage />} />
               <Route path="backtest" element={<BacktestPage />} />
