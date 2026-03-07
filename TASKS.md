@@ -1,7 +1,7 @@
 # Newton Development Tasks
 
-**Current Version:** `0.6.0` (Stage 6 start)
-**Latest Release:** `0.5.12` (Stage 5 complete)
+**Current Version:** `0.7.0` (Stage 7 start)
+**Latest Release:** `0.6.12` (Stage 6 complete)
 
 Status: Active
 **Source of truth:** `SPEC.md`
@@ -21,6 +21,8 @@ Status: Active
 | 0.5.0 | 5 | Stage 5 start |
 | 0.5.12 | 5 | Stage 5 complete |
 | 0.6.0 | 6 | Stage 6 start |
+| 0.6.12 | 6 | Stage 6 complete |
+| 0.7.0 | 7 | Stage 7 start |
 
 ## Rules
 - Work only from `SPEC.md` unless the lead explicitly approves deviation.
@@ -181,6 +183,25 @@ The following work was completed before governance was established. This is not 
 
 ---
 
+## Stage 7: Client Web UI
+
+**Branch:** `stage/7-client-ui`
+
+| ID | Task | Scope | Acceptance | Status |
+|---|---|---|---|---|
+| T-701 | Dashboard page — portfolio overview and system health | fullstack | Dashboard page at `/dashboard` (new default route); portfolio equity card (placeholder data until paper trading); per-instrument status cards showing last signal, regime, circuit breaker state; system health summary (from existing `/health` endpoint); kill switch toggle button (wired to existing `POST/DELETE /api/v1/kill`); recent alerts list; sidebar updated with Dashboard as first item; dark mode | TODO |
+| T-702 | Strategy management API endpoints | server | `GET /api/v1/strategy/{instrument}` — current strategy config; `GET /api/v1/strategy/{instrument}/versions` — version history; `PUT /api/v1/strategy/{instrument}/activate` — activate a version; strategy configs read from `config/strategies/*.json`; version history tracked; validation via Pydantic; tests for all endpoints | TODO |
+| T-703 | Strategy management UI | client | Strategy Management page at `/strategy`; instrument selector; current config display with JSON viewer; version history table; comparison view (diff two versions); activate version button; sidebar nav updated; dark mode | TODO |
+| T-704 | Regime override API endpoints | server | `GET /api/v1/regime/{instrument}` — current regime state; `PUT /api/v1/regime/{instrument}/override` — set manual override; `DELETE /api/v1/regime/{instrument}/override` — clear override; override stored in memory (v1); overridden regime returned by regime detector; tests for set/get/clear cycle | TODO |
+| T-705 | Live trading monitor page | fullstack | Trading Monitor page at `/trading`; open positions table (from `GET /api/v1/trades?status=open`); trade history table with filters (instrument, date range, status); signal log showing recent signal generation results; reconciliation status display; manual position close button (wired to broker adapter); pause/resume per instrument toggle; dark mode | TODO |
+| T-706 | System configuration page | fullstack | Config page at `/config`; risk parameter editor with validation (wired to existing `GET/PUT /api/v1/config/risk`); regime override controls per instrument (wired to T-704 endpoints); trading mode indicator (paper/live — read-only until Stage 8); dark mode | TODO |
+| T-707 | OHLCV data viewer with candlestick charting | client | Data Viewer page at `/data`; instrument and interval selector; candlestick chart (using lightweight-charts or Recharts custom); volume overlay; indicator overlays (RSI, MACD, BB from features endpoint); date range selection; responsive dark mode | TODO |
+| T-708 | In-app help system | fullstack | `GET /api/v1/docs/{section}` endpoint serving markdown help files from `docs/help/`; help content for each major page (dashboard, strategy, trading, config, data, backtest); help button/panel in UI that loads contextual help for current page; markdown rendered in React; dark mode | TODO |
+| T-709 | Dockerfile and docker-compose update | infra | Production `Dockerfile` for Newton (Python app + built client static files); multi-stage build (Node for client, Python for server); `docker-compose.yml` updated with `newton` service alongside existing `timescaledb`; health check configured; DEC-012 status updated to Superseded; `.dockerignore` created | TODO |
+| T-7G | Stage gate: lint/type/test/build pass | fullstack | `ruff check .` PASS; `mypy src` PASS; `pytest --cov=src -q` PASS >=80% global; `cd client && npm run build` PASS; `docker build` PASS; all T-7xx tasks DONE | TODO |
+
+---
+
 ## Backlog
 
 <!--
@@ -192,7 +213,7 @@ during /stage-init, NOT in advance. Keep entries lightweight.
 |-------|------|---------|
 | ~~5~~ | ~~Trading Engine~~ | ~~Active — see Stage 5 above~~ |
 | ~~6~~ | ~~Backtesting~~ | ~~Active — see Stage 6 above~~ |
-| 7 | Client Web UI | Signal display, data viewer with charting, trade monitoring — React foundation from Stage 4 (SPEC §8) |
+| ~~7~~ | ~~Client Web UI~~ | ~~Active — see Stage 7 above~~ |
 | 8 | Paper Trading | Oanda practice account + Binance testnet integration, live data pipeline (SPEC §11) |
 | 9 | Live Trading | Production deployment, monitoring, kill switches, operational runbooks (SPEC §11) |
 
