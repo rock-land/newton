@@ -236,6 +236,21 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Circuit breaker API | `curl http://localhost:8000/api/v1/circuit-breakers` returns breaker snapshot with `any_tripped` and `kill_switch_active` fields | T-705 |
 | [ ] | Pause API | `curl -X PUT http://localhost:8000/api/v1/trading/pause/EUR_USD` returns 200 with `paused: true`; `curl -X DELETE` returns `paused: false` | T-705 |
 
+### H6. System Configuration (T-706)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Config page loads | Navigate to `/config` — page renders with Risk Parameters, Regime Overrides, Trading Mode tabs | T-706 |
+| [ ] | Risk parameters display | Risk Parameters tab shows all default and portfolio parameters with current values | T-706 |
+| [ ] | Edit risk parameter | Change `max_position_pct` value — Save Changes button enables; click Save — success message appears, value updates | T-706 |
+| [ ] | Risk validation error | Enter invalid value (e.g., `max_position_pct = 0.99`) — error message shows Pydantic validation failure | T-706 |
+| [ ] | Reset button | Edit a field then click Reset — field reverts to current value, Save button disables | T-706 |
+| [ ] | Regime override display | Regime Overrides tab shows per-instrument cards with current regime label, confidence, vol metrics | T-706 |
+| [ ] | Set regime override | Click "Set Override" on EUR_USD — select label, enter reason, click Apply — OVERRIDE badge appears | T-706 |
+| [ ] | Clear regime override | Click "Clear Override" — badge disappears, computed regime label returns | T-706 |
+| [ ] | Trading mode indicator | Trading Mode tab shows PAPER badge and "Live mode available in Stage 8" message | T-706 |
+| [ ] | Sidebar nav | Config item appears in sidebar with SlidersHorizontal icon; clicking navigates to `/config` | T-706 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

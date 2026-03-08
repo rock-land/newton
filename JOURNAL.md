@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-08 18:30 | Stage 7 / T-706 | /ship T-706 | Shipped system configuration page — v0.7.6 |
+| 2026-03-08 18:00 | Stage 7 / T-706 | /task T-706 | System configuration page: risk editor, regime overrides, trading mode indicator |
 | 2026-03-08 17:30 | Stage 7 / T-705 | /ship T-705 | Shipped live trading monitor page — v0.7.5 |
 | 2026-03-08 17:00 | Stage 7 / T-705 | /task T-705 | Live trading monitor page: positions, trade history, signals, kill switch, pause/resume |
 | 2026-03-08 16:30 | Stage 7 / T-704 | /ship T-704 | Shipped regime override API endpoints — v0.7.4 |

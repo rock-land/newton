@@ -126,6 +126,7 @@ export interface RegimeResponse {
   vol_median: number;
   computed_at: string;
   error: string | null;
+  override_active?: boolean;
 }
 
 export interface ModelArtifact {
@@ -455,6 +456,36 @@ export interface StrategyActivateResponse {
   activated_at: string;
 }
 
+/* ---------- Risk Config types ---------- */
+
+export interface RiskConfigResponse {
+  config: Record<string, unknown>;
+}
+
+export interface RiskConfigUpdateRequest {
+  defaults?: Record<string, unknown>;
+  portfolio?: Record<string, unknown>;
+  reason?: string;
+  changed_by?: string;
+}
+
+/* ---------- Regime Override types ---------- */
+
+export interface RegimeOverrideRequest {
+  regime_label: string;
+  reason: string;
+  expires_at?: string | null;
+}
+
+export interface RegimeOverrideResponse {
+  instrument: string;
+  regime_label: string;
+  reason: string;
+  expires_at: string | null;
+  set_at: string;
+  active: boolean;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
@@ -571,5 +602,24 @@ export const api = {
     request<StrategyActivateResponse>(`/strategy/${encodeURIComponent(instrument)}/activate`, {
       method: "PUT",
       body: JSON.stringify({ version, notes }),
+    }),
+
+  getRiskConfig: () => request<RiskConfigResponse>("/config/risk"),
+
+  updateRiskConfig: (data: RiskConfigUpdateRequest) =>
+    request<RiskConfigResponse>("/config/risk", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  setRegimeOverride: (instrument: string, body: RegimeOverrideRequest) =>
+    request<RegimeOverrideResponse>(`/regime/${encodeURIComponent(instrument)}/override`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  clearRegimeOverride: (instrument: string) =>
+    request<RegimeOverrideResponse>(`/regime/${encodeURIComponent(instrument)}/override`, {
+      method: "DELETE",
     }),
 };

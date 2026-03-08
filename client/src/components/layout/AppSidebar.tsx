@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LineChart,
   Settings,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const navItems = [
   { to: "/strategy", label: "Strategy", icon: Settings },
   { to: "/backtest", label: "Backtest", icon: LineChart },
   { to: "/trading", label: "Trading", icon: BarChart3 },
+  { to: "/config", label: "Config", icon: SlidersHorizontal },
 ];
 
 export function AppSidebar() {
