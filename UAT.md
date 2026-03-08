@@ -198,6 +198,18 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | PUT activate version | After creating a version, `curl -X PUT http://localhost:8000/api/v1/strategy/EUR_USD/activate -H 'Content-Type: application/json' -d '{"version":1}'` activates it and saves previous as new version | T-702 |
 | [ ] | Invalid instrument 404 | `curl http://localhost:8000/api/v1/strategy/INVALID` returns 404 | T-702 |
 
+### H3. Strategy UI (T-703)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Page loads with sidebar | Navigate to `/strategy` — sidebar shows "Strategy" link with icon; page renders with instrument dropdown | T-703 |
+| [ ] | Current config display | Select EUR_USD — JSON viewer shows current strategy config with version badge and updated timestamp | T-703 |
+| [ ] | Switch instrument | Change dropdown to BTC_USD — config updates to show BTC_USD strategy | T-703 |
+| [ ] | Version history table | If versions exist: table shows version number, notes, created date, and Activate button per row | T-703 |
+| [ ] | Activate version | Click "Activate" on a version row — config refreshes, version history updates with auto-saved entry | T-703 |
+| [ ] | Compare versions | Select two versions in Compare dropdowns — diff table shows changed/added/removed keys with colored badges | T-703 |
+| [ ] | Error state | Stop API server, reload page — error message appears with hint | T-703 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

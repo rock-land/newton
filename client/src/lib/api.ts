@@ -381,6 +381,35 @@ export interface BacktestListResponse {
   count: number;
 }
 
+/* ---------- Strategy types ---------- */
+
+export interface StrategyConfigResponse {
+  instrument: string;
+  config: Record<string, unknown>;
+  version: number;
+  updated_at: string;
+}
+
+export interface StrategyVersionEntry {
+  version: number;
+  config: Record<string, unknown>;
+  notes: string | null;
+  created_at: string | null;
+}
+
+export interface StrategyVersionsResponse {
+  instrument: string;
+  versions: StrategyVersionEntry[];
+  count: number;
+}
+
+export interface StrategyActivateResponse {
+  instrument: string;
+  activated_version: number;
+  message: string;
+  activated_at: string;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
@@ -470,4 +499,16 @@ export const api = {
 
   deactivateKillSwitch: () =>
     request<KillSwitchResponse>("/kill?confirm=true", { method: "DELETE" }),
+
+  strategyConfig: (instrument: string) =>
+    request<StrategyConfigResponse>(`/strategy/${encodeURIComponent(instrument)}`),
+
+  strategyVersions: (instrument: string) =>
+    request<StrategyVersionsResponse>(`/strategy/${encodeURIComponent(instrument)}/versions`),
+
+  activateStrategy: (instrument: string, version: number, notes?: string) =>
+    request<StrategyActivateResponse>(`/strategy/${encodeURIComponent(instrument)}/activate`, {
+      method: "PUT",
+      body: JSON.stringify({ version, notes }),
+    }),
 };

@@ -5,6 +5,7 @@ import {
   Gauge,
   LayoutDashboard,
   LineChart,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -23,6 +24,7 @@ const navItems = [
   { to: "/health", label: "Health", icon: Activity },
   { to: "/uat", label: "UAT Runner", icon: FlaskConical },
   { to: "/admin", label: "Admin", icon: LayoutDashboard },
+  { to: "/strategy", label: "Strategy", icon: Settings },
   { to: "/backtest", label: "Backtest", icon: LineChart },
 ];
 
