@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   Activity,
+  BarChart3,
   FlaskConical,
   Gauge,
   LayoutDashboard,
@@ -26,6 +27,7 @@ const navItems = [
   { to: "/admin", label: "Admin", icon: LayoutDashboard },
   { to: "/strategy", label: "Strategy", icon: Settings },
   { to: "/backtest", label: "Backtest", icon: LineChart },
+  { to: "/trading", label: "Trading", icon: BarChart3 },
 ];
 
 export function AppSidebar() {

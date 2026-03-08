@@ -221,6 +221,21 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Invalid label 422 | `curl -X PUT ... -d '{"regime_label":"INVALID","reason":"test"}'` returns 422 | T-704 |
 | [ ] | Unsupported instrument 404 | `curl -X PUT http://localhost:8000/api/v1/regime/INVALID/override ...` returns 404 | T-704 |
 
+### H5. Trading Monitor (T-705)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Trading page loads | Navigate to `/trading` — page renders with tabs (Open Positions, Trade History, Signal Log, Circuit Breakers, Reconciliation) | T-705 |
+| [ ] | Open Positions tab | Shows open trades table (or "No open positions" message); close button visible per row | T-705 |
+| [ ] | Trade History tab | Shows full trade list with instrument/status filter inputs | T-705 |
+| [ ] | Signal Log tab | Shows per-instrument signal cards with action, probability, confidence, generator | T-705 |
+| [ ] | Circuit Breakers tab | Shows system/portfolio/instrument breaker cards with OK/TRIPPED status | T-705 |
+| [ ] | Reconciliation tab | Shows reconciliation results or "no data" message with unresolved count | T-705 |
+| [ ] | Kill switch button | Click "Activate Kill Switch" — badge shows ACTIVE; click "Deactivate" — badge clears | T-705 |
+| [ ] | Pause/resume per instrument | Click "Pause" on EUR/USD — PAUSED badge appears; click "Resume" — badge clears | T-705 |
+| [ ] | Circuit breaker API | `curl http://localhost:8000/api/v1/circuit-breakers` returns breaker snapshot with `any_tripped` and `kill_switch_active` fields | T-705 |
+| [ ] | Pause API | `curl -X PUT http://localhost:8000/api/v1/trading/pause/EUR_USD` returns 200 with `paused: true`; `curl -X DELETE` returns `paused: false` | T-705 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

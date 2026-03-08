@@ -8,6 +8,7 @@ import { UATPage } from "@/pages/UATPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { BacktestPage } from "@/pages/BacktestPage";
 import { StrategyPage } from "@/pages/StrategyPage";
+import { TradingMonitorPage } from "@/pages/TradingMonitorPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="admin" element={<AdminPage />} />
               <Route path="strategy" element={<StrategyPage />} />
               <Route path="backtest" element={<BacktestPage />} />
+              <Route path="trading" element={<TradingMonitorPage />} />
             </Route>
           </Routes>
         </ErrorBoundary>

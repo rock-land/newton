@@ -138,6 +138,57 @@ class RiskConfigUpdateRequest(BaseModel):
     changed_by: str = "api"
 
 
+class CircuitBreakerStateResponse(BaseModel):
+    """Single circuit breaker state."""
+
+    name: str
+    tripped: bool
+    tripped_at: datetime | None
+    reason: str
+    scope: str
+
+
+class CircuitBreakersResponse(BaseModel):
+    """Response for GET /circuit-breakers."""
+
+    instrument_breakers: dict[str, list[CircuitBreakerStateResponse]]
+    portfolio_breakers: list[CircuitBreakerStateResponse]
+    system_breakers: list[CircuitBreakerStateResponse]
+    any_tripped: bool
+    kill_switch_active: bool
+
+
+class ReconciliationResultResponse(BaseModel):
+    """Single reconciliation result."""
+
+    checked_at: datetime
+    broker: str
+    instrument: str
+    status: str
+    details: dict[str, Any]
+    resolved: bool
+
+
+class ReconciliationResponse(BaseModel):
+    """Response for GET /reconciliation."""
+
+    results: list[ReconciliationResultResponse]
+    unresolved_count: int
+
+
+class PauseResponse(BaseModel):
+    """Response for pause/resume operations."""
+
+    instrument: str
+    paused: bool
+
+
+class PausedListResponse(BaseModel):
+    """Response for GET /trading/pause."""
+
+    paused_instruments: list[str]
+
+
 # ---------------------------------------------------------------------------
 # TradingService — holds injected dependencies
 # ---------------------------------------------------------------------------
@@ -188,6 +239,10 @@ class TradingService:
 
 # Module-level service
 _service: TradingService | None = None
+
+# In-memory pause state per instrument (v1 — lost on restart)
+_paused_instruments: set[str] = set()
+_SUPPORTED_INSTRUMENTS = {"EUR_USD", "BTC_USD"}
 
 
 def configure(service: TradingService) -> None:
@@ -398,3 +453,98 @@ def update_risk_config(req: RiskConfigUpdateRequest) -> RiskConfigResponse:
     return RiskConfigResponse(
         config=new_config.model_dump(mode="json"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Circuit breaker snapshot endpoint
+# ---------------------------------------------------------------------------
+
+
+def _breaker_to_response(b: Any) -> CircuitBreakerStateResponse:
+    return CircuitBreakerStateResponse(
+        name=b.name,
+        tripped=b.tripped,
+        tripped_at=b.tripped_at,
+        reason=b.reason,
+        scope=b.scope,
+    )
+
+
+@router.get("/circuit-breakers", response_model=CircuitBreakersResponse)
+def get_circuit_breakers() -> CircuitBreakersResponse:
+    """Return current circuit breaker states (§6.5)."""
+    svc = _get_service()
+    snapshot = svc.circuit_breaker.get_snapshot()
+
+    instrument_breakers: dict[str, list[CircuitBreakerStateResponse]] = {}
+    for instrument, breakers in snapshot.instrument_breakers.items():
+        instrument_breakers[instrument] = [_breaker_to_response(b) for b in breakers]
+
+    return CircuitBreakersResponse(
+        instrument_breakers=instrument_breakers,
+        portfolio_breakers=[_breaker_to_response(b) for b in snapshot.portfolio_breakers],
+        system_breakers=[_breaker_to_response(b) for b in snapshot.system_breakers],
+        any_tripped=snapshot.any_tripped,
+        kill_switch_active=svc.circuit_breaker.is_kill_switch_active(),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Reconciliation status endpoint
+# ---------------------------------------------------------------------------
+
+
+@router.get("/reconciliation", response_model=ReconciliationResponse)
+def get_reconciliation_status() -> ReconciliationResponse:
+    """Return latest reconciliation results (§5.12)."""
+    svc = _get_service()
+
+    # Use reconciliation store if available, otherwise return empty
+    recon_store = getattr(svc, "_recon_store", None)
+    if recon_store is not None and hasattr(recon_store, "get_unresolved"):
+        unresolved = recon_store.get_unresolved()
+        results = [
+            ReconciliationResultResponse(
+                checked_at=r.checked_at,
+                broker=r.broker,
+                instrument=r.instrument,
+                status=r.status,
+                details=r.details,
+                resolved=r.resolved,
+            )
+            for r in unresolved
+        ]
+        return ReconciliationResponse(results=results, unresolved_count=len(results))
+
+    return ReconciliationResponse(results=[], unresolved_count=0)
+
+
+# ---------------------------------------------------------------------------
+# Pause/resume per instrument
+# ---------------------------------------------------------------------------
+
+
+@router.put("/trading/pause/{instrument}", response_model=PauseResponse)
+def pause_instrument(instrument: str) -> PauseResponse:
+    """Pause signal execution for an instrument."""
+    if instrument not in _SUPPORTED_INSTRUMENTS:
+        raise HTTPException(status_code=404, detail=f"Unsupported instrument: {instrument}")
+    _paused_instruments.add(instrument)
+    logger.info("Instrument paused: %s", instrument)
+    return PauseResponse(instrument=instrument, paused=True)
+
+
+@router.delete("/trading/pause/{instrument}", response_model=PauseResponse)
+def resume_instrument(instrument: str) -> PauseResponse:
+    """Resume signal execution for an instrument."""
+    if instrument not in _SUPPORTED_INSTRUMENTS:
+        raise HTTPException(status_code=404, detail=f"Unsupported instrument: {instrument}")
+    _paused_instruments.discard(instrument)
+    logger.info("Instrument resumed: %s", instrument)
+    return PauseResponse(instrument=instrument, paused=False)
+
+
+@router.get("/trading/pause", response_model=PausedListResponse)
+def list_paused_instruments() -> PausedListResponse:
+    """List all paused instruments."""
+    return PausedListResponse(paused_instruments=sorted(_paused_instruments))

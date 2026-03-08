@@ -266,6 +266,51 @@ export interface KillSwitchResponse {
   message: string;
 }
 
+/* ---------- Circuit Breaker types ---------- */
+
+export interface CircuitBreakerState {
+  name: string;
+  tripped: boolean;
+  tripped_at: string | null;
+  reason: string;
+  scope: string;
+}
+
+export interface CircuitBreakersResponse {
+  instrument_breakers: Record<string, CircuitBreakerState[]>;
+  portfolio_breakers: CircuitBreakerState[];
+  system_breakers: CircuitBreakerState[];
+  any_tripped: boolean;
+  kill_switch_active: boolean;
+}
+
+/* ---------- Reconciliation types ---------- */
+
+export interface ReconciliationResult {
+  checked_at: string;
+  broker: string;
+  instrument: string;
+  status: string;
+  details: Record<string, unknown>;
+  resolved: boolean;
+}
+
+export interface ReconciliationResponse {
+  results: ReconciliationResult[];
+  unresolved_count: number;
+}
+
+/* ---------- Pause types ---------- */
+
+export interface PauseResponse {
+  instrument: string;
+  paused: boolean;
+}
+
+export interface PausedListResponse {
+  paused_instruments: string[];
+}
+
 /* ---------- Backtest types ---------- */
 
 export interface BacktestRunRequest {
@@ -499,6 +544,22 @@ export const api = {
 
   deactivateKillSwitch: () =>
     request<KillSwitchResponse>("/kill?confirm=true", { method: "DELETE" }),
+
+  circuitBreakers: () => request<CircuitBreakersResponse>("/circuit-breakers"),
+
+  reconciliation: () => request<ReconciliationResponse>("/reconciliation"),
+
+  pauseInstrument: (instrument: string) =>
+    request<PauseResponse>(`/trading/pause/${encodeURIComponent(instrument)}`, {
+      method: "PUT",
+    }),
+
+  resumeInstrument: (instrument: string) =>
+    request<PauseResponse>(`/trading/pause/${encodeURIComponent(instrument)}`, {
+      method: "DELETE",
+    }),
+
+  listPaused: () => request<PausedListResponse>("/trading/pause"),
 
   strategyConfig: (instrument: string) =>
     request<StrategyConfigResponse>(`/strategy/${encodeURIComponent(instrument)}`),
