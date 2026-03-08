@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-08 14:30 | Stage 7 / T-702 | /ship T-702 | Shipped strategy management API endpoints — v0.7.2 |
+| 2026-03-08 14:00 | Stage 7 / T-702 | /task T-702 | Strategy management API endpoints: GET/PUT strategy config, version history |
 | 2026-03-08 13:00 | Stage 7 / T-701 | /ship T-701 | Shipped dashboard page — v0.7.1 |
 | 2026-03-08 12:30 | Stage 7 / T-701 | /task T-701 | Dashboard page: portfolio overview, instrument status, health, kill switch |
 | 2026-03-08 12:00 | Stage 7 / — | /stage-init | Initialized Stage 7: Client Web UI with 9 tasks + 1 gate |

@@ -179,7 +179,26 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Backtest comparison | Compare tab: select two runs from dropdowns, see side-by-side metric diffs with green (better) / red (worse) highlighting; overlaid equity curves | T-608 |
 | [ ] | Paginated trade table | Trades tab shows paginated table (50 per page) with previous/next navigation and page indicator | T-608 |
 
-## H. Cross-Cutting Checks
+## H. Stage 7 — Client Web UI
+
+### H1. Dashboard (T-701)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Dashboard loads | Navigate to `/` — dashboard page renders with health summary, instrument cards, recent trades | T-701 |
+| [ ] | Kill switch toggle | Click kill switch button — activates/deactivates, status updates | T-701 |
+| [ ] | Auto-refresh | Wait 10 seconds — data refreshes without manual reload | T-701 |
+
+### H2. Strategy API (T-702)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | GET strategy config | `curl http://localhost:8000/api/v1/strategy/EUR_USD` returns JSON with instrument, config, version, updated_at | T-702 |
+| [ ] | GET strategy versions | `curl http://localhost:8000/api/v1/strategy/EUR_USD/versions` returns versions list (empty initially) | T-702 |
+| [ ] | PUT activate version | After creating a version, `curl -X PUT http://localhost:8000/api/v1/strategy/EUR_USD/activate -H 'Content-Type: application/json' -d '{"version":1}'` activates it and saves previous as new version | T-702 |
+| [ ] | Invalid instrument 404 | `curl http://localhost:8000/api/v1/strategy/INVALID` returns 404 | T-702 |
+
+## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |
 |------|------|------------------|-------|
