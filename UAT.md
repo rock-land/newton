@@ -210,6 +210,17 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Compare versions | Select two versions in Compare dropdowns — diff table shows changed/added/removed keys with colored badges | T-703 |
 | [ ] | Error state | Stop API server, reload page — error message appears with hint | T-703 |
 
+### H4. Regime Override API (T-704)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | PUT override | `curl -X PUT http://localhost:8000/api/v1/regime/EUR_USD/override -H 'Content-Type: application/json' -d '{"regime_label":"HIGH_VOL_TRENDING","reason":"test"}'` returns 200 with override details and `active: true` | T-704 |
+| [ ] | GET with override | `curl http://localhost:8000/api/v1/regime/EUR_USD` returns `override_active: true` and the overridden regime label | T-704 |
+| [ ] | DELETE override | `curl -X DELETE http://localhost:8000/api/v1/regime/EUR_USD/override` returns 200 with `active: false` | T-704 |
+| [ ] | GET after clear | `curl http://localhost:8000/api/v1/regime/EUR_USD` returns `override_active: false` and computed regime | T-704 |
+| [ ] | Invalid label 422 | `curl -X PUT ... -d '{"regime_label":"INVALID","reason":"test"}'` returns 422 | T-704 |
+| [ ] | Unsupported instrument 404 | `curl -X PUT http://localhost:8000/api/v1/regime/INVALID/override ...` returns 404 | T-704 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

@@ -101,6 +101,26 @@ class RegimeResponse(BaseModel):
     vol_median: float
     computed_at: datetime
     error: str | None = None
+    override_active: bool = False
+
+
+class RegimeOverrideRequest(BaseModel):
+    """Request body for PUT /api/v1/regime/{instrument}/override."""
+
+    regime_label: str
+    reason: str
+    expires_at: datetime | None = None
+
+
+class RegimeOverrideResponse(BaseModel):
+    """Response for regime override operations."""
+
+    instrument: str
+    regime_label: str
+    reason: str
+    expires_at: datetime | None = None
+    set_at: datetime
+    active: bool
 
 
 class ModelArtifactResponse(BaseModel):

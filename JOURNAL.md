@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-08 16:30 | Stage 7 / T-704 | /ship T-704 | Shipped regime override API endpoints — v0.7.4 |
+| 2026-03-08 16:00 | Stage 7 / T-704 | /task T-704 | Regime override API: GET/PUT/DELETE override endpoints with in-memory store |
 | 2026-03-08 15:30 | Stage 7 / T-703 | /ship T-703 | Shipped strategy management UI — v0.7.3 |
 | 2026-03-08 15:00 | Stage 7 / T-703 | /task T-703 | Strategy management UI: instrument selector, JSON viewer, version history, diff, activate |
 | 2026-03-08 14:30 | Stage 7 / T-702 | /ship T-702 | Shipped strategy management API endpoints — v0.7.2 |
