@@ -10,6 +10,7 @@ import { BacktestPage } from "@/pages/BacktestPage";
 import { StrategyPage } from "@/pages/StrategyPage";
 import { TradingMonitorPage } from "@/pages/TradingMonitorPage";
 import { ConfigPage } from "@/pages/ConfigPage";
+import { DataPage } from "@/pages/DataPage";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
               <Route path="backtest" element={<BacktestPage />} />
               <Route path="trading" element={<TradingMonitorPage />} />
               <Route path="config" element={<ConfigPage />} />
+              <Route path="data" element={<DataPage />} />
             </Route>
           </Routes>
         </ErrorBoundary>

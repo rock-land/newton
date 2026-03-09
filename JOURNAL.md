@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-09 10:30 | Stage 7 / T-707 | /ship T-707 | Shipped OHLCV data viewer with candlestick charting — v0.7.7 |
+| 2026-03-09 10:00 | Stage 7 / T-707 | /task T-707 | OHLCV data viewer with candlestick charting, volume overlay, indicator overlays |
 | 2026-03-08 18:30 | Stage 7 / T-706 | /ship T-706 | Shipped system configuration page — v0.7.6 |
 | 2026-03-08 18:00 | Stage 7 / T-706 | /task T-706 | System configuration page: risk editor, regime overrides, trading mode indicator |
 | 2026-03-08 17:30 | Stage 7 / T-705 | /ship T-705 | Shipped live trading monitor page — v0.7.5 |

@@ -251,6 +251,23 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Trading mode indicator | Trading Mode tab shows PAPER badge and "Live mode available in Stage 8" message | T-706 |
 | [ ] | Sidebar nav | Config item appears in sidebar with SlidersHorizontal icon; clicking navigates to `/config` | T-706 |
 
+### H7. Data Viewer (T-707)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Data page loads | Navigate to `/data` — page renders with instrument/interval selectors, start date, limit, and Fetch button | T-707 |
+| [ ] | Fetch OHLCV data | Select EUR_USD, 1h interval, recent start date — click Fetch — candlestick chart renders with volume below | T-707 |
+| [ ] | Switch instrument | Change to BTC_USD — click Fetch — chart updates with BTC price data, Y-axis shows integer prices | T-707 |
+| [ ] | Switch interval | Change interval to 1d — click Fetch — chart updates with daily candles | T-707 |
+| [ ] | Candlestick colors | Green candles for up (close >= open), red for down; wicks extend to high/low | T-707 |
+| [ ] | Volume overlay | Volume bars below price chart, colored green/red matching candle direction | T-707 |
+| [ ] | Bollinger Bands | Toggle BB indicator badge — click Fetch — purple dashed upper/lower bands and solid middle band overlay on price chart | T-707 |
+| [ ] | RSI indicator | Toggle RSI badge — click Fetch — RSI panel appears below volume with 30/70 reference lines | T-707 |
+| [ ] | MACD indicator | Toggle MACD badge — click Fetch — MACD panel with blue MACD line, orange signal line, and purple histogram | T-707 |
+| [ ] | Summary stats | Summary card shows candle count, first/last timestamps, and price range | T-707 |
+| [ ] | Sidebar nav | Data item appears in sidebar with CandlestickChart icon; clicking navigates to `/data` | T-707 |
+| [ ] | No data handling | Fetch with date range that has no data — "No candle data found" message displays | T-707 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

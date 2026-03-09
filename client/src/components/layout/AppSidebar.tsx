@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   Activity,
   BarChart3,
+  CandlestickChart,
   FlaskConical,
   Gauge,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const navItems = [
   { to: "/strategy", label: "Strategy", icon: Settings },
   { to: "/backtest", label: "Backtest", icon: LineChart },
   { to: "/trading", label: "Trading", icon: BarChart3 },
+  { to: "/data", label: "Data", icon: CandlestickChart },
   { to: "/config", label: "Config", icon: SlidersHorizontal },
 ];
 
