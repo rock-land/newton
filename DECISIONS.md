@@ -94,7 +94,7 @@ Format:
 - **Decision:** Defer Dockerfile implementation to Stage 7 (Paper Trading).
 - **Context:** The Dockerfile is currently a stub placeholder (`# Scaffold Dockerfile placeholder`). Containerized deployment is not needed until paper trading (Stage 7) or production deployment (Stage 8). Building a Dockerfile now would require premature decisions about runtime dependencies, environment variables, and service orchestration that will change as the system matures through Stages 2–6.
 - **Consequences:** Dockerfile stub retained per DEC-009 (scaffold pattern). No Docker-based deployment until Stage 7. Development uses local Python environment and `docker compose` for TimescaleDB only.
-- **Status:** Accepted
+- **Status:** Superseded — Implemented in T-709 (Stage 7). Multi-stage Dockerfile and docker-compose newton service now in place.
 
 ## DEC-013
 - **Date:** 2026-03-03

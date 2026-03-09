@@ -285,6 +285,17 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Invalid section 404 | `GET /api/v1/docs/nonexistent` returns 404 | T-708 |
 | [ ] | Dark mode rendering | Help panel text is readable in dark mode — proper contrast, styled headings and lists | T-708 |
 
+### H9. Docker Deployment (T-709)
+
+| Pass | Test | What to look for | Notes |
+|------|------|------------------|-------|
+| [ ] | Docker build | `docker build -t newton .` completes without errors (multi-stage: Node client build + Python server) | T-709 |
+| [ ] | Docker compose up | `docker compose up -d` starts both `newton-timescaledb` and `newton-app` containers | T-709 |
+| [ ] | App health check | `curl http://localhost:8000/api/v1/health` returns 200 from the Docker container | T-709 |
+| [ ] | Client served | Navigate to `http://localhost:8000/` in browser — React dashboard loads from the container | T-709 |
+| [ ] | DB connectivity | Newton container connects to TimescaleDB container via `depends_on` health check | T-709 |
+| [ ] | Container restart | Stop and restart `newton-app` — container recovers and serves requests | T-709 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

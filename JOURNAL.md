@@ -5,6 +5,7 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-09 12:00 | Stage 7 / T-709 | /task T-709 | Dockerfile and docker-compose update: multi-stage build, .dockerignore, health check |
 | 2026-03-09 11:30 | Stage 7 / T-708 | /ship T-708 | Shipped in-app help system — v0.7.8 |
 | 2026-03-09 11:00 | Stage 7 / T-708 | /task T-708 | In-app help system: API endpoint + markdown help files + contextual help UI |
 | 2026-03-09 10:30 | Stage 7 / T-707 | /ship T-707 | Shipped OHLCV data viewer with candlestick charting — v0.7.7 |
