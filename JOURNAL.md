@@ -5,6 +5,8 @@ System commands (`/clear`, `/compact`, `/context`, `/status`) are excluded.
 
 | Date/Time | Context | Command | Summary |
 |-----------|---------|---------|---------|
+| 2026-03-09 11:30 | Stage 7 / T-708 | /ship T-708 | Shipped in-app help system — v0.7.8 |
+| 2026-03-09 11:00 | Stage 7 / T-708 | /task T-708 | In-app help system: API endpoint + markdown help files + contextual help UI |
 | 2026-03-09 10:30 | Stage 7 / T-707 | /ship T-707 | Shipped OHLCV data viewer with candlestick charting — v0.7.7 |
 | 2026-03-09 10:00 | Stage 7 / T-707 | /task T-707 | OHLCV data viewer with candlestick charting, volume overlay, indicator overlays |
 | 2026-03-08 18:30 | Stage 7 / T-706 | /ship T-706 | Shipped system configuration page — v0.7.6 |

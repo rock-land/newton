@@ -268,6 +268,23 @@ Verify key endpoints return valid responses. Use browser, curl, or any HTTP clie
 | [ ] | Sidebar nav | Data item appears in sidebar with CandlestickChart icon; clicking navigates to `/data` | T-707 |
 | [ ] | No data handling | Fetch with date range that has no data — "No candle data found" message displays | T-707 |
 
+### H8. In-App Help (T-708)
+
+| Pass | Test | What to look for | Task |
+|------|------|------------------|------|
+| [ ] | Help button visible | HelpCircle (?) icon button appears in the top-right of the page header bar on every page | T-708 |
+| [ ] | Help panel opens | Click the ? button — a sheet/drawer slides in from the right with help content | T-708 |
+| [ ] | Dashboard help | On `/` page, click ? — help panel shows "Dashboard" title with system health, kill switch, alerts guidance | T-708 |
+| [ ] | Strategy help | On `/strategy`, click ? — help panel shows "Strategy Management" with versioning, comparison, activation info | T-708 |
+| [ ] | Trading help | On `/trading`, click ? — help panel shows "Trading Monitor" with positions, signals, pause/resume info | T-708 |
+| [ ] | Config help | On `/config`, click ? — help panel shows "System Configuration" with risk parameters, regime overrides info | T-708 |
+| [ ] | Data help | On `/data`, click ? — help panel shows "Data Viewer" with candlestick, volume, indicator overlay info | T-708 |
+| [ ] | Backtest help | On `/backtest`, click ? — help panel shows "Backtesting" with running backtests, metrics, comparison info | T-708 |
+| [ ] | Help sections API | `GET /api/v1/docs/sections` returns list of available help sections (index, dashboard, strategy, etc.) | T-708 |
+| [ ] | Help content API | `GET /api/v1/docs/dashboard` returns JSON with section, title, and markdown content | T-708 |
+| [ ] | Invalid section 404 | `GET /api/v1/docs/nonexistent` returns 404 | T-708 |
+| [ ] | Dark mode rendering | Help panel text is readable in dark mode — proper contrast, styled headings and lists | T-708 |
+
 ## I. Cross-Cutting Checks
 
 | Pass | Test | What to look for | Notes |

@@ -486,6 +486,19 @@ export interface RegimeOverrideResponse {
   active: boolean;
 }
 
+/* ---------- Help types ---------- */
+
+export interface HelpSectionResponse {
+  section: string;
+  title: string;
+  content: string;
+}
+
+export interface HelpSectionsListResponse {
+  sections: string[];
+  count: number;
+}
+
 /* ---------- Endpoints ---------- */
 
 export const api = {
@@ -622,4 +635,9 @@ export const api = {
     request<RegimeOverrideResponse>(`/regime/${encodeURIComponent(instrument)}/override`, {
       method: "DELETE",
     }),
+
+  helpSections: () => request<HelpSectionsListResponse>("/docs/sections"),
+
+  helpContent: (section: string) =>
+    request<HelpSectionResponse>(`/docs/${encodeURIComponent(section)}`),
 };
